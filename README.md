@@ -1,4 +1,4 @@
-<img src="assets/knock-on-icon.svg" alt="Knock-On icon" width="160">
+<img src="assets/knock-on-banner.svg" alt="Knock-On: See what one change sets in motion." width="100%">
 
 # Knock-On
 
