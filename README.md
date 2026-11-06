@@ -74,3 +74,9 @@ The template includes settings for the Univer license files and AntLing API acce
 Application installation and run commands will be added once the app is scaffolded. Environment configuration alone does not activate the SDK or verify API access.
 
 See [SETUP.md](SETUP.md) for configuration details and AntLing coding-tool setup.
+
+## Build documents
+
+- [Shared build brief](docs/BUILD_BRIEF.md): scope, responsibilities, proposed architecture, and acceptance criteria.
+- [Model and API contract](docs/API_CONTRACT.md): bakery formulas, expected results, persistence, and interface/backend boundaries.
+- [Prompts for Ling and Claude](docs/BUILD_PROMPTS.md): coordinated implementation tasks and handoff requirements.
