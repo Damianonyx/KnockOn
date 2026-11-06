@@ -1,3 +1,5 @@
+<img src="assets/knock-on-icon.svg" alt="Knock-On icon" width="160">
+
 # Knock-On
 
 **See what one change sets in motion.**
