@@ -1,0 +1,9 @@
+# Local credentials and environment configuration
+.env
+.env.*
+!.env.example
+
+# Original license files and uploaded attachments
+license.txt
+licenseKey.txt
+.codex-attachments/

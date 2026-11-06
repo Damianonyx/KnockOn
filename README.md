@@ -72,3 +72,5 @@ For a fresh checkout, copy [`.env.example`](.env.example) to `.env` and fill in 
 The template includes settings for the Univer license files and AntLing API access, with `Ling-3.2-flash` configured as the model ID. Keep `.env`, API keys, and license files out of version control; the included `.gitignore` excludes them.
 
 Application installation and run commands will be added once the app is scaffolded. Environment configuration alone does not activate the SDK or verify API access.
+
+See [SETUP.md](SETUP.md) for configuration details and AntLing coding-tool setup.
