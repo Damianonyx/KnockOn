@@ -2,7 +2,7 @@ import { Workspace } from '@/components/workspace/Workspace';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Project · Knock-On' };
+export const metadata = { title: 'Project' };
 
 /**
  * Server component: reads UNIVER_LICENSE (license.txt contents) and hands only

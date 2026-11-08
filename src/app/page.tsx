@@ -7,11 +7,6 @@ import styles from '@/components/landing/Landing.module.css';
 const serif = Gloock({ weight: '400', subsets: ['latin'], display: 'swap', variable: '--font-serif' });
 const sans = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-sans' });
 
-export const metadata = {
-  title: 'Knock-On · See what one change sets in motion',
-  description:
-    'Model a business in a real spreadsheet, introduce a change, and compare possible responses side by side, with every assumption visible.',
-};
 
 const STEPS = [
   {
