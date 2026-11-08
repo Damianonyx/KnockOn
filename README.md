@@ -71,9 +71,9 @@ Comparison charts and formula inspection shipped with the first interface. Ling 
 
 ## Using the interface
 
-Run the app (see [SETUP.md](SETUP.md#run-the-app)) and open http://localhost:3000.
+Run the app (see [SETUP.md](SETUP.md#run-the-app)) and open http://localhost:3000. The landing page is at `/`; the app itself is at `/projects`.
 
-1. **Projects.** Create a project with a name, a currency, and either the fictional demo bakery or blank figures. Saved projects are listed most recently updated first; click one to reopen it.
+1. **Projects** (`/projects`). Create a project with a name, a currency, and either the fictional demo bakery or blank figures. Saved projects are listed most recently updated first; click one to reopen it.
 2. **Workspace.** The bakery model is a real Univer spreadsheet. Edit the eight blue input cells (B2:B9) in the sheet or with the input controls beside it: both change the same workbook cells. Labels and the formulas in B11:B16 are fixed. Metric cards show revenue, total costs, profit, and margin as Univer calculates them; margin shows N/A when revenue is zero, and a loss is labelled as a loss. The header shows whether changes are unsaved, saving, saved, or failed; Ctrl+S saves.
 3. **Scenarios.** Save the baseline, then add a shock (energy or fuel cost increase, supplier price increase, or sales decline). The first shock freezes the baseline so every comparison keeps the same starting point. From a shock, add responses: a price change, where you enter the monthly sales you expect at the new price, or a supplier switch with a new ingredient cost and a delivery cost. Knock-On never estimates how customers react to a price.
 4. **Compare.** The Compare tab shows the saved, server-calculated results for every scenario in a table and charts, including profit change against the baseline and each scenario's changed inputs and assumptions.

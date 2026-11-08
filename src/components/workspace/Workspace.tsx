@@ -557,7 +557,7 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
                     Try again
                   </button>
                 )}
-                <Link href="/" className="btn btn-sm">
+                <Link href="/projects" className="btn btn-sm">
                   All projects
                 </Link>
               </div>
@@ -627,7 +627,7 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
               + Response{responseSource ? ` to “${responseSource.name.length > 16 ? `${responseSource.name.slice(0, 15)}…` : responseSource.name}”` : ''}
             </button>
           </div>
-          <Link href="/" className="small" style={{ marginTop: 'auto' }}>
+          <Link href="/projects" className="small" style={{ marginTop: 'auto' }}>
             ← All projects
           </Link>
         </aside>

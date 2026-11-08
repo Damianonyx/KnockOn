@@ -67,7 +67,7 @@ async function waitSaved(page) {
     console.error(`Cannot reach ${BASE}. Start the app first (npm run dev or npm start), or set BASE_URL.`);
     process.exit(1);
   }
-  await page.goto(`${BASE}/`);
+  await page.goto(`${BASE}/projects`);
   await page.getByLabel('Project name').fill('E2E Bakery');
   await page.getByRole('button', { name: 'Create project' }).click();
   await page.waitForURL(/projects\//);

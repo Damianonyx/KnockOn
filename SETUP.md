@@ -40,7 +40,8 @@ Open http://localhost:3000 (or the port `npm start` reports). The pages are:
 
 | Path | What it shows |
 | --- | --- |
-| `/` | Saved projects and the create-project form. |
+| `/` | Landing page (hero section in progress). |
+| `/projects` | Saved projects and the create-project form. |
 | `/projects/:projectId` | The workspace: scenario list, Univer spreadsheet, input controls, metric cards, and the inspect panel. Add `?view=compare` for the comparison table and charts; the URL also keeps the open scenario, so a reload returns to it. |
 
 The spreadsheet runs only in the browser (loaded with `next/dynamic` and `ssr: false`). Components talk to it through the editor adapter in `src/lib/univer/browser/adapter.ts`, which writes inputs into the real workbook, reads Univer's calculated results, blocks edits outside B2:B9, and keeps a frozen baseline read-only. The interface does no arithmetic of its own for revenue, costs, or profit: metric cards show the browser Univer calculation of the unsaved draft, and comparisons show the saved results the server calculated.

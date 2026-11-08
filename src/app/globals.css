@@ -310,3 +310,12 @@ table.compare .changes { text-align: left; font-size: 0.78rem; color: var(--text
   .metric .m-value { font-size: 1.2rem; }
   .sheet-host { height: 420px; }
 }
+
+/* ---------- Landing (placeholder until the hero is designed) ---------- */
+.landing { min-height: 100vh; background: var(--brand); color: var(--cream); display: flex; align-items: center; justify-content: center; padding: 32px 16px; }
+.landing-inner { max-width: 560px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.landing-icon { border-radius: 16px; background: #fff; }
+.landing h1 { font-size: 2.4rem; }
+.landing-tagline { font-size: 1.2rem; color: var(--accent); font-weight: 600; }
+.landing-body { color: #cfe0e2; }
+.landing-cta { margin-top: 8px; padding: 10px 22px; font-size: 1rem; }
