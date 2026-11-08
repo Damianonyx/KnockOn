@@ -1,0 +1,47 @@
+{
+  "name": "knock-on",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Knock-On — interactive economics lab. See what one change sets in motion.",
+  "packageManager": "npm@10.9.9",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:reset": "prisma migrate reset --force",
+    "verify:headless": "tsx scripts/verify-headless.ts",
+    "verify:api": "tsx scripts/verify-api.ts",
+    "verify:browser": "tsx scripts/verify-browser.ts",
+    "verify:all": "tsx scripts/verify-all.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "7.10.1",
+    "@univerjs/core": "1.4.0",
+    "@univerjs/design": "1.4.0",
+    "@univerjs/engine-formula": "1.4.0",
+    "@univerjs/icons": "1.47.0",
+    "@univerjs/sheets": "1.4.0",
+    "@univerjs/sheets-ui": "1.4.0",
+    "@univerjs/ui": "1.4.0",
+    "next": "16.4.5",
+    "prisma": "7.10.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "rxjs": "^7.8.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "puppeteer-core": "^25.16.0",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3"
+  }
+}

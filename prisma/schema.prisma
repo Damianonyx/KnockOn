@@ -1,0 +1,44 @@
+// Knock-On local prototype schema.
+// SQLite for a local single-user process with durable disk.
+// See docs/API_CONTRACT.md: projects hold scenarios; scenarios hold the full
+// workbook snapshot, assumptions, and the server-calculated projection.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id        String     @id @default(cuid())
+  name      String
+  currency  String
+  templateId String
+  revision  Int        @default(1)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  scenarios Scenario[]
+
+  @@map("projects")
+}
+
+model Scenario {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  kind      String // "baseline" | "shock" | "response"
+  parentScenarioId String?
+  notes     String   @default("")
+  workbook  String   // Full JSON snapshot (IWorkbookData) including formulas.
+  assumptions String  @default("[]") // JSON array of Assumption records.
+  calculation String  @default("{}") // JSON: server-recalculated projection + status.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@map("scenarios")
+}

@@ -7,3 +7,24 @@
 license.txt
 licenseKey.txt
 .codex-attachments/
+
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Prisma / SQLite database files and generated client
+prisma/*.db
+prisma/*.db-journal
+prisma/generated/
+*.db
+*.db-journal
+
+# Verification artifacts
+verify-results/
+
+# Logs
+*.log
+npm-debug.log*
