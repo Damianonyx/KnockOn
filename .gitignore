@@ -7,3 +7,33 @@
 license.txt
 licenseKey.txt
 .codex-attachments/
+
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# SQLite database files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Verification artifacts
+verify-results/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local SQLite database (KNOCKON_DATABASE_PATH)
+data/
+
+# Scratch files
+.tmp/
+
+# TypeScript incremental build info and Next.js generated types
+*.tsbuildinfo
+next-env.d.ts
