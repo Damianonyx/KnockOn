@@ -8,7 +8,7 @@ Knock-On is an interactive economics lab in development. It will help people mod
 
 The name comes from a knock-on effect: one change causes consequences elsewhere.
 
-> **Project status:** Early development. The backend is in place: Univer calculates every scenario on the server, projects are saved locally, and Ling 3.2 Flash explains results. The spreadsheet interface is next. This README will evolve as features are implemented and tested. Knock-On is a working name.
+> **Project status:** Early development. The backend is in place: Univer calculates every scenario on the server, projects are saved locally, and Ling 3.2 Flash explains results. The MVP interface is now in place too: a real, editable Univer spreadsheet, scenario forks, comparison tables and charts, and result inspection for the bakery template. An interface for Ling explanations comes in a later milestone. This README will evolve as features are implemented and tested. Knock-On is a working name.
 
 ## The idea
 
@@ -59,13 +59,27 @@ These AI development roles describe how the app will be built. The model used fo
 
 Complete one bakery workflow from entering figures to saving and reopening scenarios:
 
-- [ ] Embed a working Univer spreadsheet with a bakery template.
-- [ ] Connect editable inputs to sales, cost, and profit formulas.
-- [ ] Introduce an energy-cost increase while preserving the baseline.
-- [ ] Create and compare separate response scenarios.
-- [ ] Save and reopen projects with their inputs, formulas, and assumptions intact.
+- [x] Embed a working Univer spreadsheet with a bakery template.
+- [x] Connect editable inputs to sales, cost, and profit formulas.
+- [x] Introduce an energy-cost increase while preserving the baseline.
+- [x] Create and compare separate response scenarios.
+- [x] Save and reopen projects with their inputs, formulas, and assumptions intact.
 
 Subsequent work will add comparison charts, traceable explanations, and more templates.
+
+Comparison charts and formula inspection shipped with the first interface. Ling explanations in the interface, and more templates, are next.
+
+## Using the interface
+
+Run the app (see [SETUP.md](SETUP.md#run-the-app)) and open http://localhost:3000.
+
+1. **Projects.** Create a project with a name, a currency, and either the fictional demo bakery or blank figures. Saved projects are listed most recently updated first; click one to reopen it.
+2. **Workspace.** The bakery model is a real Univer spreadsheet. Edit the eight blue input cells (B2:B9) in the sheet or with the input controls beside it: both change the same workbook cells. Labels and the formulas in B11:B16 are fixed. Metric cards show revenue, total costs, profit, and margin as Univer calculates them; margin shows N/A when revenue is zero, and a loss is labelled as a loss. The header shows whether changes are unsaved, saving, saved, or failed; Ctrl+S saves.
+3. **Scenarios.** Save the baseline, then add a shock (energy or fuel cost increase, supplier price increase, or sales decline). The first shock freezes the baseline so every comparison keeps the same starting point. From a shock, add responses: a price change, where you enter the monthly sales you expect at the new price, or a supplier switch with a new ingredient cost and a delivery cost. Knock-On never estimates how customers react to a price.
+4. **Compare.** The Compare tab shows the saved, server-calculated results for every scenario in a table and charts, including profit change against the baseline and each scenario's changed inputs and assumptions.
+5. **Inspect.** Click any result, whether a metric card, a figure in the comparison table, or a result cell in the sheet, to see its formula and the inputs behind it.
+
+Demo figures are always labelled as fictional. If the project changes elsewhere while you edit (for example in another tab), Knock-On keeps your draft and lets you apply it to the latest version or reload.
 
 ## Configuration
 

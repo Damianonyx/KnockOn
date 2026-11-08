@@ -12,7 +12,7 @@ For a fresh checkout, copy `.env.example` to `.env` and enter your Univer licens
 
 AntLing's [official API model listing](https://developer.ant-ling.com/en/docs/faq/), checked on November 6, 2026, confirms `Ling-3.2-flash`. Both `.env` and `.env.example` use that exact, case-sensitive ID. Access with your account still needs a live API check after you add the key.
 
-The backend is implemented: server-side Univer calculation, local storage, the project API, and Ling explanations. The browser spreadsheet editor and the interface are next. Next.js loads `.env` automatically; restart the app after editing it. Hosted deployments need the same values entered in their environment settings.
+The backend is implemented: server-side Univer calculation, local storage, the project API, and Ling explanations. The browser spreadsheet editor and the MVP interface are implemented as well (projects, workspace, scenarios, comparison, and inspection); the explanation interface comes later. Next.js loads `.env` automatically; restart the app after editing it. Hosted deployments need the same values entered in their environment settings.
 
 ## Run the app
 
@@ -26,12 +26,27 @@ npm run dev            # http://localhost:3000, API under /api
 
 | Command | What it does |
 | --- | --- |
-| `npm test` | Runs the backend tests: the bakery fixtures, saving and reloading, and every validation rule. No server or API key needed. |
+| `npm test` | Runs the backend tests (the bakery fixtures, saving and reloading, and every validation rule) and the interface helper tests (formatting, result inspection, the price-confirmation rule, scenario ordering). No server or API key needed. |
 | `npm run typecheck` | Checks the TypeScript. |
 | `npm run build` then `npm start` | Production build and server. |
 | `npm run smoke:api` | With the app running, runs the full bakery workflow over HTTP. Set `BASE_URL` for a port other than 3000. It creates a demo project in your database. |
 
 Projects are stored in the SQLite file at `KNOCKON_DATABASE_PATH` (default `./data/knockon.db`), created on first run and excluded from Git. Delete that file to start over. Node may print an "SQLite is an experimental feature" warning; it is harmless.
+
+### Interface
+
+Open http://localhost:3000 (or the port `npm start` reports). The pages are:
+
+| Path | What it shows |
+| --- | --- |
+| `/` | Saved projects and the create-project form. |
+| `/projects/:projectId` | The workspace: scenario list, Univer spreadsheet, input controls, metric cards, and the inspect panel. Add `?view=compare` for the comparison table and charts; the URL also keeps the open scenario, so a reload returns to it. |
+
+The spreadsheet runs only in the browser (loaded with `next/dynamic` and `ssr: false`). Components talk to it through the editor adapter in `src/lib/univer/browser/adapter.ts`, which writes inputs into the real workbook, reads Univer's calculated results, blocks edits outside B2:B9, and keeps a frozen baseline read-only. The interface does no arithmetic of its own for revenue, costs, or profit: metric cards show the browser Univer calculation of the unsaved draft, and comparisons show the saved results the server calculated.
+
+Browser-side Univer packages, all pinned to 1.4.0: `@univerjs/core`, `design`, `ui`, `docs`, `docs-ui`, `engine-render`, `engine-formula`, `sheets`, `sheets-ui`, `sheets-formula`, `sheets-formula-ui` (registers the cell editor), `themes`, and `@univerjs-pro/license`. The license plugin is registered only when `UNIVER_LICENSE` is set.
+
+Interface code lives in `src/components/` (`projects/`, `workspace/`, `ui/`), with browser helpers in `src/lib/api/client.ts`, `src/lib/format.ts`, `src/lib/scenarios.ts`, and `src/lib/univer/inspect.ts`.
 
 ### API
 
@@ -44,6 +59,8 @@ Explanations call Ling 3.2 Flash from the server at `POST /api/projects/:project
 The Web SDK takes the contents of `license.txt` in its license plugin or advanced preset. Collaboration and Exchange server features use both files. When wiring the editor, pass only `UNIVER_LICENSE` to its browser configuration as required by Univer. Keep `UNIVER_LICENSE_KEY` and `ANTLING_API_KEY` on the server; never copy them into browser configuration or variables prefixed with `NEXT_PUBLIC_` or `VITE_`.
 
 Setting an environment value does not establish that a license is valid or covers a specific domain or feature. Verify those when the SDK is integrated.
+
+How the editor receives it: the project page (`src/app/projects/[projectId]/page.tsx`) is a server component that reads only `UNIVER_LICENSE` and passes it to the browser editor, which registers Univer's license plugin with it. Nothing else from the environment is passed to the browser, and no variable uses a `NEXT_PUBLIC_` prefix. The editor works without the value (the plugin is then not registered); Pro features would need it.
 
 [Univer license configuration](https://docs.univer.ai/server/license)
 

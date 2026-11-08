@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
     '@univerjs/sheets-formula',
   ],
   typescript: { ignoreBuildErrors: false },
+  // Do not write an AGENTS.md into the repository when the dev server starts.
+  agentRules: false,
 };
 
 export default nextConfig;
