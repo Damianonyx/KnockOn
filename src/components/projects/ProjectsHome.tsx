@@ -7,6 +7,7 @@ import { createProjectRequestSchema, type ProjectSummary } from '@/lib/contracts
 import { BAKERY_TEMPLATE_ID } from '@/lib/templates/bakery';
 import { formatDateTime } from '@/lib/format';
 import { AppHeader } from '@/components/ui/AppHeader';
+import { KnockyPose } from '@/components/ui/KnockyPose';
 
 const CURRENCIES = ['GBP', 'EUR', 'USD', 'CAD', 'AUD', 'NZD', 'CHF', 'SEK', 'NOK', 'DKK', 'PLN', 'JPY', 'INR', 'ZAR', 'SGD'];
 
@@ -62,9 +63,9 @@ export function ProjectsHome() {
     <>
       <AppHeader />
       <main className="page">
-        <div className="hero">
+        <div className="hero hero-knocky">
+          <KnockyPose pose="hello" width={72} />
           <h1>Your projects</h1>
-
         </div>
         <div className="projects-grid">
           <section className="card" aria-labelledby="saved-heading">
@@ -80,6 +81,7 @@ export function ProjectsHome() {
             {list.status === 'error' && (
               <div className="card-pad">
                 <div className="banner banner-error" role="alert">
+                  <KnockyPose pose="whoa" width={44} />
                   <div className="banner-body">
                     <strong>Could not load projects.</strong>
                     <span>{list.message}</span>
@@ -92,6 +94,7 @@ export function ProjectsHome() {
             )}
             {list.status === 'ready' && list.projects.length === 0 && (
               <div className="center-state">
+                <KnockyPose pose="hello" width={110} />
                 <strong style={{ color: 'var(--text)' }}>No projects yet</strong>
                 <span>Create your first project with the form. The fictional bakery is a good place to start.</span>
               </div>

@@ -33,6 +33,7 @@ import { inspectResult, resultKeyForCell } from '@/lib/univer/inspect';
 import { validateBakerySnapshot } from '@/lib/univer/snapshot';
 import { AppHeader } from '@/components/ui/AppHeader';
 import { Dialog } from '@/components/ui/Dialog';
+import { KnockyPose } from '@/components/ui/KnockyPose';
 import { ComparisonView } from './ComparisonView';
 import { ForkDialog, type ForkSpec } from './ForkDialog';
 import { InputsPanel } from './InputsPanel';
@@ -533,9 +534,10 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
         <AppHeader />
         <main className="page">
           <div className="banner banner-error" role="alert">
+            <KnockyPose pose="whoa" width={56} />
             <div className="banner-body">
               <strong>{load.notFound ? 'Project not found.' : 'Could not load this project.'}</strong>
-              <span>{load.message}</span>
+              {!load.notFound && <span>{load.message}</span>}
               <div className="banner-actions">
                 {!load.notFound && (
                   <button type="button" className="btn btn-sm" onClick={() => void fetchProject()}>
@@ -688,6 +690,7 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
                 <div className="sheet-host">
                   {editorError ? (
                     <div className="sheet-overlay" role="alert" style={{ flexDirection: 'column', padding: 20, textAlign: 'center' }}>
+                      <KnockyPose pose="whoa" width={64} />
                       <strong>The spreadsheet could not start.</strong>
                       <span className="small">{editorError}</span>
                       <button type="button" className="btn btn-sm" onClick={() => window.location.reload()}>

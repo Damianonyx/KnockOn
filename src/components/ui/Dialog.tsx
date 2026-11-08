@@ -5,12 +5,15 @@ import { useEffect, useId, useRef, type ReactNode } from 'react';
 export function Dialog({
   title,
   description,
+  illustration,
   children,
   footer,
   onClose,
 }: {
   title: string;
   description?: ReactNode;
+  /** Optional mascot or picture shown beside the title. */
+  illustration?: ReactNode;
   children?: ReactNode;
   footer: ReactNode;
   onClose: () => void;
@@ -33,9 +36,12 @@ export function Dialog({
   return (
     <div className="dialog-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={ref}>
-        <div className="dialog-head">
-          <h2 id={titleId}>{title}</h2>
-          {description ? <div className="muted small">{description}</div> : null}
+        <div className={illustration ? 'dialog-head dialog-head-art' : 'dialog-head'}>
+          {illustration}
+          <div className="stack" style={{ gap: 4 }}>
+            <h2 id={titleId}>{title}</h2>
+            {description ? <div className="muted small">{description}</div> : null}
+          </div>
         </div>
         {children ? <div className="dialog-body">{children}</div> : null}
         <div className="dialog-foot">{footer}</div>

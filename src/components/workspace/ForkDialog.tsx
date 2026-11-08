@@ -8,6 +8,7 @@ import type { Assumption, Project, Scenario } from '@/lib/contracts/project';
 import { formatMoney, formatNumber, parseNumberInput } from '@/lib/format';
 import { BAKERY_INPUTS, type BakeryInputKey } from '@/lib/templates/bakery';
 import { Dialog } from '@/components/ui/Dialog';
+import { KnockyPose } from '@/components/ui/KnockyPose';
 
 export interface ForkSpec {
   kind: 'shock' | 'response';
@@ -143,6 +144,7 @@ export function ForkDialog({
   return (
     <Dialog
       title={kind === 'shock' ? 'What changed?' : `How do you respond to “${source.name}”?`}
+      illustration={<KnockyPose pose={kind === 'shock' ? 'knock' : 'gotit'} width={kind === 'shock' ? 96 : 70} />}
       onClose={busy ? () => undefined : onCancel}
       footer={
         <>

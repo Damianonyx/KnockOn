@@ -314,3 +314,8 @@ table.compare .changes { text-align: left; font-size: 0.78rem; color: var(--text
 }
 @media (prefers-reduced-motion: reduce) { .inspect-drawer { animation: none; } }
 .compare-section .chart-card { max-width: 760px; }
+
+/* ---------- Knocky in the app ---------- */
+.hero-knocky { flex-direction: row; align-items: flex-end; gap: 14px; }
+.dialog-head-art { flex-direction: row; align-items: center; gap: 14px; }
+.banner > img { align-self: center; }
