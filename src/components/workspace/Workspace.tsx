@@ -534,7 +534,7 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
         <AppHeader />
         <main className="page">
           <div className="banner banner-error" role="alert">
-            <KnockyPose pose="whoa" width={56} />
+            <KnockyPose pose="whoa" width={80} />
             <div className="banner-body">
               <strong>{load.notFound ? 'Project not found.' : 'Could not load this project.'}</strong>
               {!load.notFound && <span>{load.message}</span>}
@@ -690,7 +690,7 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
                 <div className="sheet-host">
                   {editorError ? (
                     <div className="sheet-overlay" role="alert" style={{ flexDirection: 'column', padding: 20, textAlign: 'center' }}>
-                      <KnockyPose pose="whoa" width={64} />
+                      <KnockyPose pose="whoa" width={96} />
                       <strong>The spreadsheet could not start.</strong>
                       <span className="small">{editorError}</span>
                       <button type="button" className="btn btn-sm" onClick={() => window.location.reload()}>

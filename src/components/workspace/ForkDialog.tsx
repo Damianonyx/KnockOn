@@ -144,7 +144,7 @@ export function ForkDialog({
   return (
     <Dialog
       title={kind === 'shock' ? 'What changed?' : `How do you respond to “${source.name}”?`}
-      illustration={<KnockyPose pose={kind === 'shock' ? 'knock' : 'gotit'} width={kind === 'shock' ? 96 : 70} />}
+      illustration={<KnockyPose pose={kind === 'shock' ? 'knock' : 'gotit'} width={kind === 'shock' ? 140 : 104} />}
       onClose={busy ? () => undefined : onCancel}
       footer={
         <>

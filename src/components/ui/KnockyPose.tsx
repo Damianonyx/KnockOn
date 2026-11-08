@@ -1,12 +1,14 @@
 /**
- * Knocky, the halftone domino mascot, in one of its poses. Decorative: the
+ * Knocky, the halftone domino mascot, alive: each pose is a self-contained
+ * animated SVG (breathing, blinking, a gesture and a speech bubble). With
+ * reduced motion turned on, it holds still on the key pose. Decorative: the
  * text next to it always says what matters, so it has an empty alt.
  */
 const POSES = {
-  hello: { w: 320, h: 466 },
-  knock: { w: 320, h: 293 },
-  whoa: { w: 320, h: 463 },
-  gotit: { w: 320, h: 409 },
+  hello: { w: 440, h: 540 },
+  knock: { w: 550, h: 540 },
+  whoa: { w: 440, h: 540 },
+  gotit: { w: 440, h: 540 },
 } as const;
 
 export type KnockyPoseName = keyof typeof POSES;
@@ -16,7 +18,7 @@ export function KnockyPose({ pose, width, className }: { pose: KnockyPoseName; w
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={`/knocky/${pose}.webp`}
+      src={`/knocky/${pose}.svg`}
       width={width}
       height={Math.round((width * h) / w)}
       alt=""

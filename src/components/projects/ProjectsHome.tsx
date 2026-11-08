@@ -64,7 +64,7 @@ export function ProjectsHome() {
       <AppHeader />
       <main className="page">
         <div className="hero hero-knocky">
-          <KnockyPose pose="hello" width={72} />
+          {!(list.status === 'ready' && list.projects.length === 0) && <KnockyPose pose="hello" width={104} />}
           <h1>Your projects</h1>
         </div>
         <div className="projects-grid">
@@ -81,7 +81,7 @@ export function ProjectsHome() {
             {list.status === 'error' && (
               <div className="card-pad">
                 <div className="banner banner-error" role="alert">
-                  <KnockyPose pose="whoa" width={44} />
+                  <KnockyPose pose="whoa" width={64} />
                   <div className="banner-body">
                     <strong>Could not load projects.</strong>
                     <span>{list.message}</span>
@@ -94,7 +94,7 @@ export function ProjectsHome() {
             )}
             {list.status === 'ready' && list.projects.length === 0 && (
               <div className="center-state">
-                <KnockyPose pose="hello" width={110} />
+                <KnockyPose pose="hello" width={160} />
                 <strong style={{ color: 'var(--text)' }}>No projects yet</strong>
                 <span>Create your first project with the form. The fictional bakery is a good place to start.</span>
               </div>

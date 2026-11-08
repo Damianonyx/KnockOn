@@ -10,7 +10,7 @@ export default function NotFound() {
       <AppHeader />
       <main className="page">
         <div className="center-state">
-          <KnockyPose pose="whoa" width={120} />
+          <KnockyPose pose="whoa" width={180} />
           <h1 style={{ color: 'var(--text)' }}>This page doesn’t exist.</h1>
           <Link href="/projects" className="btn btn-primary">
             Go to your projects
