@@ -1,8 +1,8 @@
-# Knock-On build brief
+# KnockOn build brief
 
 Draft v0.1 · November 6, 2026
 
-This is the shared specification for Claude and Ling. Product requirements come from the Knock-On concept brief. The stack and contracts below are proposed starting choices for the first prototype, not claims about existing code. Record implementation changes here and in the [API contract](API_CONTRACT.md) before the other tool depends on them.
+This is the shared specification for Claude and Ling. Product requirements come from the KnockOn concept brief. The stack and contracts below are proposed starting choices for the first prototype, not claims about existing code. Record implementation changes here and in the [API contract](API_CONTRACT.md) before the other tool depends on them.
 
 ## Purpose
 
@@ -21,7 +21,7 @@ The first audience is small business owners and economics learners. The first co
 | ChatGPT / Codex | Product decisions, brainstorming, briefs, coordinated prompts, and content. |
 | Univer SDK | Actual spreadsheet editing and formula calculation. |
 
-Ling must be explicitly selected in the coding tool used for its tasks. A model name in `.env` does not change the model writing code. Choosing an AI provider for explanations inside Knock-On is separate from using Ling for development.
+Ling must be explicitly selected in the coding tool used for its tasks. A model name in `.env` does not change the model writing code. Choosing an AI provider for explanations inside KnockOn is separate from using Ling for development.
 
 ## First complete workflow
 

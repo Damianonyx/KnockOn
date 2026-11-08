@@ -1,6 +1,6 @@
 'use client';
 /**
- * Landing hero: "Meet Knock-On," with Knocky, the halftone domino mascot.
+ * Landing hero: "Meet KnockOn," with Knocky, the halftone domino mascot.
  *
  * Intro (about 4 seconds, once per page load):
  * 1. Knocky prints in dot by dot.
@@ -56,14 +56,14 @@ const CHART = (
   </svg>
 );
 // eslint-disable-next-line @next/next/no-img-element
-const MARK = <img src="/knock-on-mark.svg" alt="" width={40} height={29} />;
+const MARK = <img src="/knockon-mark.svg" alt="" width={40} height={29} />;
 
 /** The effects of one change, as app-style tiles: final position (stage px), rotation, content. */
 const TILES: { x: number; y: number; r: number; bg: string; label: string; content: React.ReactNode }[] = [
   { x: -150, y: 60, r: -12, bg: '#fd6a42', label: 'Energy costs', content: <span>⚡</span> },
   { x: -70, y: -10, r: 6, bg: '#fff3df', label: 'Bakery', content: <span>🥐</span> },
   { x: 40, y: 6, r: -6, bg: '#0d4452', label: 'Spreadsheet', content: SHEET },
-  { x: 150, y: -50, r: 4, bg: '#ffffff', label: 'Knock-On', content: MARK },
+  { x: 150, y: -50, r: 4, bg: '#ffffff', label: 'KnockOn', content: MARK },
   { x: 250, y: 0, r: 10, bg: '#fdde76', label: 'Prices', content: <span>🏷️</span> },
   { x: 350, y: -36, r: -8, bg: '#ffffff', label: 'Profit', content: CHART },
   { x: 420, y: 60, r: 12, bg: '#d8ecee', label: 'Suppliers', content: <span>🚚</span> },
@@ -211,7 +211,7 @@ export function KnockyHero() {
             <span data-word>Meet</span>
           </span>{' '}
           <span className={styles.word}>
-            <span data-word>Knock-On,</span>
+            <span data-word>KnockOn,</span>
           </span>
         </h1>
         <p className={styles.sub} data-sub>
@@ -219,7 +219,7 @@ export function KnockyHero() {
         </p>
         <Link href="/projects" className={styles.cta} data-cta>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/knock-on-mark.svg" alt="" width={18} height={13} />
+          <img src="/knockon-mark.svg" alt="" width={18} height={13} />
           Open app
         </Link>
       </header>

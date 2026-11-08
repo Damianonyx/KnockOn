@@ -1,5 +1,5 @@
 /**
- * Shared domain contracts for Knock-On.
+ * Shared domain contracts for KnockOn.
  *
  * These schemas are the single source of truth for the HTTP API documented in
  * docs/API_CONTRACT.md. Route handlers (server) and the React UI (client) both

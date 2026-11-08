@@ -1,14 +1,14 @@
-<img src="assets/knock-on-banner.svg" alt="Knock-On: See what one change sets in motion." width="100%">
+<img src="assets/knockon-banner.svg" alt="KnockOn: See what one change sets in motion." width="100%">
 
-# Knock-On
+# KnockOn
 
 **See what one change sets in motion.**
 
-Knock-On is an interactive economics lab in development. It will help people model a business, introduce a change, and compare possible responses using editable spreadsheets, visible assumptions, and explanations grounded in calculations.
+KnockOn is an interactive economics lab in development. It will help people model a business, introduce a change, and compare possible responses using editable spreadsheets, visible assumptions, and explanations grounded in calculations.
 
 The name comes from a knock-on effect: one change causes consequences elsewhere.
 
-> **Project status:** Early development. The backend is in place: Univer calculates every scenario on the server, projects are saved locally, and Ling 3.2 Flash explains results. The MVP interface is now in place too: a real, editable Univer spreadsheet, scenario forks, comparison tables and charts, and result inspection for the bakery template. An interface for Ling explanations comes in a later milestone. This README will evolve as features are implemented and tested. Knock-On is a working name.
+> **Project status:** Early development. The backend is in place: Univer calculates every scenario on the server, projects are saved locally, and Ling 3.2 Flash explains results. The MVP interface is now in place too: a real, editable Univer spreadsheet, scenario forks, comparison tables and charts, and result inspection for the bakery template. An interface for Ling explanations comes in a later milestone. This README will evolve as features are implemented and tested.
 
 ## The idea
 
@@ -36,9 +36,9 @@ Templates for freelancers and household budgets may follow later.
 
 ## Univer integration
 
-[Univer](https://univer.ai/) will provide the embedded spreadsheet workspace and formula calculation capabilities at the centre of Knock-On.
+[Univer](https://univer.ai/) will provide the embedded spreadsheet workspace and formula calculation capabilities at the centre of KnockOn.
 
-The integration will connect spreadsheet inputs and calculated results to the app's scenario controls, comparison charts, and explanation panel. Knock-On will add project storage and scenario management around that workspace.
+The integration will connect spreadsheet inputs and calculated results to the app's scenario controls, comparison charts, and explanation panel. KnockOn will add project storage and scenario management around that workspace.
 
 The planned AI assistant will help users set up a model, identify missing inputs, and explain calculated results. Assumptions must remain visible and editable, and explanations must refer back to the relevant inputs and formulas.
 
@@ -71,15 +71,15 @@ Comparison charts and formula inspection shipped with the first interface. Ling 
 
 ## Using the interface
 
-Run the app (see [SETUP.md](SETUP.md#run-the-app)) and open http://localhost:3000. The landing page is at `/`: "Meet Knock-On," with Knocky, a halftone domino mascot that gets knocked by a change and sends its effects flying. "Open app" leads to the app itself at `/projects`.
+Run the app (see [SETUP.md](SETUP.md#run-the-app)) and open http://localhost:3000. The landing page is at `/`: "Meet KnockOn," with Knocky, a halftone domino mascot that gets knocked by a change and sends its effects flying. "Open app" leads to the app itself at `/projects`.
 
 1. **Projects** (`/projects`). Create a project with a name, a currency, and either the fictional demo bakery or blank figures. Saved projects are listed most recently updated first; click one to reopen it.
 2. **Workspace.** The bakery model is a real Univer spreadsheet. Edit the eight blue input cells (B2:B9) in the sheet or with the input controls beside it: both change the same workbook cells. Labels and the formulas in B11:B16 are fixed. Metric cards show revenue, total costs, profit, and margin as Univer calculates them; margin shows N/A when revenue is zero, and a loss is labelled as a loss. The Save button is also the save status (Save, Saving…, Saved, Retry save); Ctrl+S saves.
-3. **Scenarios.** Save the baseline, then add a shock (energy or fuel cost increase, supplier price increase, or sales decline). The first shock freezes the baseline so every comparison keeps the same starting point. From a shock, add responses: a price change, where you enter the monthly sales you expect at the new price, or a supplier switch with a new ingredient cost and a delivery cost. Knock-On never estimates how customers react to a price.
+3. **Scenarios.** Save the baseline, then add a shock (energy or fuel cost increase, supplier price increase, or sales decline). The first shock freezes the baseline so every comparison keeps the same starting point. From a shock, add responses: a price change, where you enter the monthly sales you expect at the new price, or a supplier switch with a new ingredient cost and a delivery cost. KnockOn never estimates how customers react to a price.
 4. **Compare.** Below the spreadsheet, a table and a chart show the saved, server-calculated results for every scenario, including profit change against the baseline and what changed in each scenario.
 5. **Inspect.** Click any result, whether a metric card, a figure in the comparison table, or a result cell in the sheet, to see its formula and the inputs behind it.
 
-Demo figures are always labelled as fictional. If the project changes elsewhere while you edit (for example in another tab), Knock-On keeps your draft and lets you apply it to the latest version or reload.
+Demo figures are always labelled as fictional. If the project changes elsewhere while you edit (for example in another tab), KnockOn keeps your draft and lets you apply it to the latest version or reload.
 
 ## Configuration
 

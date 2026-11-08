@@ -1,5 +1,5 @@
 /**
- * Browser client for the Knock-On API (docs/API_CONTRACT.md).
+ * Browser client for the KnockOn API (docs/API_CONTRACT.md).
  *
  * Every call returns the `data` envelope or throws ApiClientError carrying the
  * documented error code, field messages, current revision, and invalid cells.

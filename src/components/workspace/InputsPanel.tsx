@@ -174,7 +174,7 @@ function PriceConfirmationBox({
       <strong id="price-confirm-title">Expected monthly sales needed</strong>
       <span>
         The price changed from {formatMoney(state.parentPrice, currency)} to {formatMoney(state.price, currency)}.
-        Knock-On does not guess how customers respond to a price change. Enter the monthly sales you expect at the new
+        KnockOn does not guess how customers respond to a price change. Enter the monthly sales you expect at the new
         price — even if you expect no change.
         {state.status === 'stale' && <strong> The price or units changed after your last confirmation; confirm again.</strong>}
       </span>

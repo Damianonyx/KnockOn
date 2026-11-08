@@ -73,7 +73,7 @@ async function waitSaved(page) {
   }
   // 0. Landing page: hero, intro animation, and Open app link
   await page.goto(`${BASE}/`);
-  check('landing headline', await page.getByRole('heading', { name: 'Meet Knock-On,' }).isVisible());
+  check('landing headline', await page.getByRole('heading', { name: 'Meet KnockOn,' }).isVisible());
   await page.waitForFunction(() => document.querySelector('[data-state]')?.getAttribute('data-state') === 'done', null, { timeout: 15000 });
   check('landing intro finishes', true);
   await shot(page, 'landing', { fullPage: true });

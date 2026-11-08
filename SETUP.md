@@ -1,4 +1,4 @@
-# Knock-On configuration
+# KnockOn configuration
 
 For a fresh checkout, copy `.env.example` to `.env` and enter your Univer license contents and AntLing API key. If `.env` already exists, edit it directly. The model is configured as `Ling-3.2-flash`. Only the template belongs in version control; `.gitignore` excludes environment files and licenses.
 
@@ -40,7 +40,7 @@ Open http://localhost:3000 (or the port `npm start` reports). The pages are:
 
 | Path | What it shows |
 | --- | --- |
-| `/` | Landing page: the "Meet Knock-On," hero with Knocky, the halftone domino mascot, and its intro animation, then "How it works" and an "Open app" section. |
+| `/` | Landing page: the "Meet KnockOn," hero with Knocky, the halftone domino mascot, and its intro animation, then "How it works" and an "Open app" section. |
 | `/projects` | Saved projects and the create-project form. |
 | `/projects/:projectId` | The workspace: scenario list with one "next step" button, Univer spreadsheet, input controls, metric cards, and the comparison table and chart below. Clicking a result opens its formula in a slide-in panel. The URL keeps the open scenario, so a reload returns to it. |
 
@@ -88,7 +88,7 @@ Adding an AntLing key to this project does not change the model powering an exis
 
 [Kilo Code setup](https://developer.ant-ling.com/en/docs/integrations/kilo-code/) · [Claude Code setup](https://developer.ant-ling.com/en/docs/integrations/claude-code/)
 
-## Use Ling inside Knock-On
+## Use Ling inside KnockOn
 
 Using Ling to write backend code is separate from selecting an AI provider for explanations inside the app. The intended explanation flow is: user edits the model, Univer recalculates, the backend sends the relevant assumptions and calculated results to the chosen model, and the UI displays the explanation. The backend must validate proposed edits before applying them. Demand changes and other uncertain relationships remain explicit user assumptions.
 
@@ -110,7 +110,7 @@ const response = await fetch(`${ANTLING_BASE_URL.replace(/\/$/, '')}/chat/comple
   },
   body: JSON.stringify({
     model: ANTLING_MODEL,
-    messages: [{ role: 'user', content: 'Reply with: Knock-On API connection successful.' }],
+    messages: [{ role: 'user', content: 'Reply with: KnockOn API connection successful.' }],
     max_tokens: 512,
   }),
 });
@@ -122,6 +122,6 @@ console.log(message);
 JS
 ```
 
-Ling powers Knock-On's explanations. Calls run in a server route using `process.env.ANTLING_API_KEY`; users' browsers call that route instead of calling AntLing directly.
+Ling powers KnockOn's explanations. Calls run in a server route using `process.env.ANTLING_API_KEY`; users' browsers call that route instead of calling AntLing directly.
 
 [AntLing API quickstart](https://developer.ant-ling.com/en/docs/getting-started/quickstart/)

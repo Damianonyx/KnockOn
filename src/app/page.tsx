@@ -27,10 +27,10 @@ export default function Landing() {
   return (
     <main className={`${styles.page} ${sans.className} ${serif.variable}`}>
       <nav className={styles.nav} aria-label="Main">
-        <Link href="/" className={styles.navBrand} aria-label="Knock-On home">
+        <Link href="/" className={styles.navBrand} aria-label="KnockOn home">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/knock-on-mark.svg" alt="" width={26} height={19} />
-          <span>Knock-On</span>
+          <img src="/knockon-mark.svg" alt="" width={26} height={19} />
+          <span>KnockOn</span>
         </Link>
         <a href="#how">How it works</a>
         <Link href="/projects" className={styles.navApp}>
@@ -45,7 +45,7 @@ export default function Landing() {
           One change. Every knock-on.
         </h2>
         <p className={styles.howLead}>
-          Knock-On is an interactive economics lab for small business owners and learners. Try a change before you make it,
+          KnockOn is an interactive economics lab for small business owners and learners. Try a change before you make it,
           and see exactly why the numbers move.
         </p>
         <ol className={styles.steps}>

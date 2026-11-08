@@ -1,6 +1,6 @@
 # Shared model and API contract
 
-Draft v0.1. This contract accompanies the [build brief](BUILD_BRIEF.md). Ling should translate it into shared TypeScript types and Zod schemas before Claude builds against it. These are Knock-On application interfaces, not claims about exact Univer SDK method names.
+Draft v0.1. This contract accompanies the [build brief](BUILD_BRIEF.md). Ling should translate it into shared TypeScript types and Zod schemas before Claude builds against it. These are KnockOn application interfaces, not claims about exact Univer SDK method names.
 
 ## Domain objects
 
@@ -128,4 +128,4 @@ For a revision conflict, return `currentRevision` in the error object. Preserve 
 
 ## Explanations
 
-Knock-On uses AntLing's Ling 3.2 Flash (`ANTLING_MODEL`, default `Ling-3.2-flash`) for explanations. The explanation endpoint only describes the current saved revision: send the `expectedRevision` you are showing, and a newer revision returns 409 `REVISION_CONFLICT`. The server sends Ling the saved inputs, formulas, Univer-calculated results, inputs changed from the parent, profit change against the baseline, assumptions with their source and confirmation, and the template simplifications. Explanations are not stored; the UI treats one as stale once the project revision changes. `changedInputs` lists inputs that differ from the parent scenario, so the UI can show what the explanation refers to without relying on Ling. The key stays on the server, and the spreadsheet remains fully usable when Ling is unavailable.
+KnockOn uses AntLing's Ling 3.2 Flash (`ANTLING_MODEL`, default `Ling-3.2-flash`) for explanations. The explanation endpoint only describes the current saved revision: send the `expectedRevision` you are showing, and a newer revision returns 409 `REVISION_CONFLICT`. The server sends Ling the saved inputs, formulas, Univer-calculated results, inputs changed from the parent, profit change against the baseline, assumptions with their source and confirmation, and the template simplifications. Explanations are not stored; the UI treats one as stale once the project revision changes. `changedInputs` lists inputs that differ from the parent scenario, so the UI can show what the explanation refers to without relying on Ling. The key stays on the server, and the spreadsheet remains fully usable when Ling is unavailable.

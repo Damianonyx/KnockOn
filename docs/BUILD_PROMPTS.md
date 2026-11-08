@@ -5,7 +5,7 @@ Use both tools against the same repository and the same committed contract. Run 
 ## 1. Give this to Ling 3.2 Flash
 
 ```text
-You are helping build the backend and technical foundation of Knock-On.
+You are helping build the backend and technical foundation of KnockOn.
 
 Read README.md, SETUP.md, docs/BUILD_BRIEF.md, and docs/API_CONTRACT.md first. Inspect existing code and local instructions before changing anything. The brief contains proposed starting architecture; use it unless the current repository supplies an established compatible implementation.
 
@@ -25,7 +25,7 @@ Conclude with the exact run and validation commands, files changed, working endp
 ## 2. Give this to Claude after Ling's handoff
 
 ```text
-You are helping build the interface of Knock-On, an interactive economics lab. The tagline is “See what one change sets in motion.”
+You are helping build the interface of KnockOn, an interactive economics lab. The tagline is “See what one change sets in motion.”
 
 Read README.md, SETUP.md, docs/BUILD_BRIEF.md, docs/API_CONTRACT.md, and Ling's latest implementation handoff. Inspect the actual shared types, backend endpoints, and Univer adapter before coding.
 

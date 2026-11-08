@@ -1,12 +1,12 @@
 /**
  * Ling 3.2 Flash explanations, grounded in one saved scenario revision.
  *
- * Flow (SETUP.md, "Use Ling inside Knock-On"): the user saves, Univer
+ * Flow (SETUP.md, "Use Ling inside KnockOn"): the user saves, Univer
  * recalculates on the server, then this service sends the saved inputs,
  * assumptions, formulas, and calculated results to Ling and returns its
  * explanation tagged with the project revision it describes. A later save makes
  * that explanation stale. The API key stays on the server; browsers call the
- * Knock-On route, never AntLing directly. The spreadsheet keeps working when
+ * KnockOn route, never AntLing directly. The spreadsheet keeps working when
  * Ling is unavailable.
  */
 import type { DatabaseSync } from 'node:sqlite';
@@ -38,7 +38,7 @@ export function lingConfigFromEnv(env: NodeJS.ProcessEnv = process.env): LingCon
 
 type ChangedInput = Explanation['changedInputs'][number];
 
-const SYSTEM_PROMPT = `You explain results in Knock-On, an economics lab where people model a small business in a spreadsheet and compare scenarios.
+const SYSTEM_PROMPT = `You explain results in KnockOn, an economics lab where people model a small business in a spreadsheet and compare scenarios.
 
 Rules:
 - Use only the figures, formulas, and assumptions in the data provided. Never invent numbers, customer behaviour, or demand responses.

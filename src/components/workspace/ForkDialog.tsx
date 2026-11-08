@@ -105,7 +105,7 @@ export function ForkDialog({
     const values: Values = {};
     for (const f of preset.fields) {
       const parsed = parseNumberInput(text[f.key] ?? '');
-      if (parsed === null) errs[f.key] = preset.id === 'price' && f.key === 'monthlyUnits' ? 'Enter the sales you expect. Knock-On won’t guess.' : 'Enter a number.';
+      if (parsed === null) errs[f.key] = preset.id === 'price' && f.key === 'monthlyUnits' ? 'Enter the sales you expect. KnockOn won’t guess.' : 'Enter a number.';
       else if (parsed < 0) errs[f.key] = 'Must be zero or more.';
       else values[f.key] = parsed;
     }
