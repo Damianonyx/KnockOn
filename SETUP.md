@@ -40,15 +40,17 @@ Open http://localhost:3000 (or the port `npm start` reports). The pages are:
 
 | Path | What it shows |
 | --- | --- |
-| `/` | Landing page (hero section in progress). |
+| `/` | Landing page: the "Meet Knock-On," hero with Knocky, the halftone domino mascot, and its intro animation, then "How it works" and an "Open app" section. |
 | `/projects` | Saved projects and the create-project form. |
 | `/projects/:projectId` | The workspace: scenario list, Univer spreadsheet, input controls, metric cards, and the inspect panel. Add `?view=compare` for the comparison table and charts; the URL also keeps the open scenario, so a reload returns to it. |
+
+The landing hero draws Knocky's halftone dots on a canvas from a fixed-seed generator (`src/components/landing/halftone.ts`), so every browser draws the same mascot. Its intro plays once per page load; with reduced motion turned on in the device settings, the finished hero shows straight away. Fonts (Gloock and Inter) load through `next/font`.
 
 The spreadsheet runs only in the browser (loaded with `next/dynamic` and `ssr: false`). Components talk to it through the editor adapter in `src/lib/univer/browser/adapter.ts`, which writes inputs into the real workbook, reads Univer's calculated results, blocks edits outside B2:B9, and keeps a frozen baseline read-only. The interface does no arithmetic of its own for revenue, costs, or profit: metric cards show the browser Univer calculation of the unsaved draft, and comparisons show the saved results the server calculated.
 
 Browser-side Univer packages, all pinned to 1.4.0: `@univerjs/core`, `design`, `ui`, `docs`, `docs-ui`, `engine-render`, `engine-formula`, `sheets`, `sheets-ui`, `sheets-formula`, `sheets-formula-ui` (registers the cell editor), `themes`, and `@univerjs-pro/license`. The license plugin is registered only when `UNIVER_LICENSE` is set.
 
-Interface code lives in `src/components/` (`projects/`, `workspace/`, `ui/`), with browser helpers in `src/lib/api/client.ts`, `src/lib/format.ts`, `src/lib/scenarios.ts`, and `src/lib/univer/inspect.ts`.
+Interface code lives in `src/components/` (`landing/`, `projects/`, `workspace/`, `ui/`), with browser helpers in `src/lib/api/client.ts`, `src/lib/format.ts`, `src/lib/scenarios.ts`, and `src/lib/univer/inspect.ts`.
 
 ### API
 

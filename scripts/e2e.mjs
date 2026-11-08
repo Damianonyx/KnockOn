@@ -67,6 +67,16 @@ async function waitSaved(page) {
     console.error(`Cannot reach ${BASE}. Start the app first (npm run dev or npm start), or set BASE_URL.`);
     process.exit(1);
   }
+  // 0. Landing page: hero, intro animation, and Open app link
+  await page.goto(`${BASE}/`);
+  check('landing headline', await page.getByRole('heading', { name: 'Meet Knock-On,' }).isVisible());
+  await page.waitForFunction(() => document.querySelector('[data-state]')?.getAttribute('data-state') === 'done', null, { timeout: 15000 });
+  check('landing intro finishes', true);
+  await shot(page, 'landing', { fullPage: true });
+  await page.getByRole('main').getByRole('link', { name: 'Open app' }).first().click();
+  await page.waitForURL(/\/projects$/);
+  check('Open app goes to the app', page.url().endsWith('/projects'));
+
   await page.goto(`${BASE}/projects`);
   await page.getByLabel('Project name').fill('E2E Bakery');
   await page.getByRole('button', { name: 'Create project' }).click();

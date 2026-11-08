@@ -71,7 +71,7 @@ Comparison charts and formula inspection shipped with the first interface. Ling 
 
 ## Using the interface
 
-Run the app (see [SETUP.md](SETUP.md#run-the-app)) and open http://localhost:3000. The landing page is at `/`; the app itself is at `/projects`.
+Run the app (see [SETUP.md](SETUP.md#run-the-app)) and open http://localhost:3000. The landing page is at `/`: "Meet Knock-On," with Knocky, a halftone domino mascot that gets knocked by a change and sends its effects flying. "Open app" leads to the app itself at `/projects`.
 
 1. **Projects** (`/projects`). Create a project with a name, a currency, and either the fictional demo bakery or blank figures. Saved projects are listed most recently updated first; click one to reopen it.
 2. **Workspace.** The bakery model is a real Univer spreadsheet. Edit the eight blue input cells (B2:B9) in the sheet or with the input controls beside it: both change the same workbook cells. Labels and the formulas in B11:B16 are fixed. Metric cards show revenue, total costs, profit, and margin as Univer calculates them; margin shows N/A when revenue is zero, and a loss is labelled as a loss. The header shows whether changes are unsaved, saving, saved, or failed; Ctrl+S saves.
