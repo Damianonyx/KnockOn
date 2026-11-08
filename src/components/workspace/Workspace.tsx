@@ -17,14 +17,11 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api, ApiClientError, errorMessage } from '@/lib/api/client';
 import type { Assumption, Project, Scenario } from '@/lib/contracts/project';
-import { formatDateTime } from '@/lib/format';
 import {
   baselineOf,
-  changedInputs,
   confirmMonthlyUnits,
   findScenario,
   isReadOnly,
-  KIND_LABEL,
   parentOf,
   priceConfirmation,
   sameAssumptions,
@@ -36,7 +33,7 @@ import { inspectResult, resultKeyForCell } from '@/lib/univer/inspect';
 import { validateBakerySnapshot } from '@/lib/univer/snapshot';
 import { AppHeader } from '@/components/ui/AppHeader';
 import { Dialog } from '@/components/ui/Dialog';
-import { ComparisonCharts, ComparisonView } from './ComparisonView';
+import { ComparisonView } from './ComparisonView';
 import { ForkDialog, type ForkSpec } from './ForkDialog';
 import { InputsPanel } from './InputsPanel';
 import { InspectPanel } from './InspectPanel';
@@ -54,7 +51,6 @@ const SpreadsheetEditor = dynamic(() => import('./SpreadsheetEditor'), {
 });
 
 type LoadState = { status: 'loading' } | { status: 'error'; message: string; notFound: boolean } | { status: 'ready' };
-type View = 'model' | 'compare';
 type Pending = { type: 'switch'; scenarioId: string } | { type: 'fork'; kind: 'shock' | 'response'; sourceId: string };
 
 interface Draft {
@@ -64,13 +60,14 @@ interface Draft {
   assumptions: Assumption[];
 }
 
+/** The save button is also the save status. */
 const SAVE_LABEL: Record<SaveState, string> = {
-  saved: 'Saved',
-  unsaved: 'Unsaved changes',
+  saved: '✓ Saved',
+  unsaved: 'Save',
   saving: 'Saving…',
-  failed: 'Save failed',
-  conflict: 'Save conflict',
-  readonly: 'Read-only',
+  failed: 'Retry save',
+  conflict: 'Not saved',
+  readonly: '',
 };
 
 function readLive(adapter: BrowserWorkbookAdapter): LiveState {
@@ -102,7 +99,6 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
   const [load, setLoad] = useState<LoadState>({ status: 'loading' });
   const [project, setProject] = useState<Project | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [view, setView] = useState<View>('model');
   const [adapter, setAdapter] = useState<BrowserWorkbookAdapter | null>(null);
   const [editorError, setEditorError] = useState<string | null>(null);
   const [sheetLoading, setSheetLoading] = useState(true);
@@ -160,7 +156,6 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
       const params = new URLSearchParams(window.location.search);
       const wanted = params.get('scenario');
       setActiveId(wanted && p.scenarios.some((s) => s.id === wanted) ? wanted : p.baselineScenarioId);
-      if (params.get('view') === 'compare') setView('compare');
       setLoad({ status: 'ready' });
     } catch (error) {
       setLoad({
@@ -180,10 +175,8 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
     if (!activeId) return;
     const url = new URL(window.location.href);
     url.searchParams.set('scenario', activeId);
-    if (view === 'compare') url.searchParams.set('view', 'compare');
-    else url.searchParams.delete('view');
     window.history.replaceState(null, '', url);
-  }, [activeId, view]);
+  }, [activeId]);
 
   // ---------- Adapter wiring ----------
   const refreshLive = useCallback(() => {
@@ -368,15 +361,9 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
   );
 
   const requestSwitch = (s: Scenario) => {
-    if (s.id === activeId) {
-      setView('model');
-      return;
-    }
+    if (s.id === activeId) return;
     if (dirty) setPending({ type: 'switch', scenarioId: s.id });
-    else {
-      setView('model');
-      void switchTo(s.id);
-    }
+    else void switchTo(s.id);
   };
 
   const discard = useCallback(async () => {
@@ -496,7 +483,6 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
       projectRef.current = forked;
       setForking(null);
       if (!created) return;
-      setView('model');
       setInspect(null);
       setProblem(null);
       setActiveId(created.id);
@@ -526,9 +512,8 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
   }, [inspect, live, project]);
   const inspectContext = useMemo(() => {
     if (!inspect || !project) return '';
-    if (inspect.source === 'draft') return `${active?.name ?? ''} · ${dirty ? 'unsaved draft, calculated in your browser by Univer' : 'saved'}`;
-    const s = findScenario(project, inspect.scenarioId);
-    return `${s?.name ?? ''} · saved, calculated on the server by Univer`;
+    if (inspect.source === 'draft') return `${active?.name ?? ''}${dirty ? ' · unsaved' : ''}`;
+    return `${findScenario(project, inspect.scenarioId)?.name ?? ''} · saved`;
   }, [inspect, project, active, dirty]);
 
   // ---------- Render ----------
@@ -569,13 +554,23 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
   }
   if (!project || !active) return null;
 
+  // One "next step" action, chosen from where the user is.
   const shocks = project.scenarios.filter((s) => s.kind === 'shock');
-  const responseSource = active.kind === 'shock' ? active : active.kind === 'response' ? parent : shocks[0];
+  const responseSource = active.kind === 'shock' ? active : active.kind === 'response' ? parent : undefined;
+  const nextStep: { kind: 'shock' | 'response'; sourceId: string; label: string } = responseSource
+    ? { kind: 'response', sourceId: responseSource.id, label: `+ Response to ${responseSource.name}` }
+    : { kind: 'shock', sourceId: project.baselineScenarioId, label: shocks.length ? '+ Another shock' : '+ Add a shock' };
   const priceState = live ? priceConfirmation(live.inputs, parent?.calculation.inputs, draft?.assumptions ?? []) : ({ required: false } as const);
   const allZero = live ? BAKERY_INPUTS.every((m) => live.inputs[m.key as BakeryInputKey] === 0) : false;
-  const changes = live ? changedInputs(live.inputs, parent?.calculation.inputs) : [];
   const fieldProblems = problem?.fields ?? {};
   const pendingTarget = pending?.type === 'switch' ? findScenario(project, pending.scenarioId) : undefined;
+  const subtitle = readOnly
+    ? 'Read-only: other scenarios are compared against this baseline.'
+    : !project.demo && allZero && active.kind === 'baseline'
+      ? 'No figures yet. Enter your own in the inputs or the blue cells.'
+      : parent
+        ? `From ${parent.name}`
+        : '';
 
   return (
     <>
@@ -583,50 +578,30 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
         <div className="header-crumb">
           <span aria-hidden>/</span>
           <strong title={project.name}>{project.name}</strong>
-          <span className="badge" style={{ background: '#0d4452', color: '#cfe0e2' }}>
-            {project.currency}
-          </span>
-          {project.demo && <span className="badge badge-demo">Fictional demo data</span>}
+          {project.demo && <span className="badge badge-demo">Fictional demo</span>}
         </div>
         <span className="spacer" />
-        <span className="save-state" data-state={saveState} role="status" aria-live="polite">
-          <span className="dot" aria-hidden />
-          {SAVE_LABEL[saveState]}
-        </span>
         {!readOnly && (
-          <button type="button" className="btn btn-accent btn-sm" onClick={() => void save()} disabled={!dirty || saving} title="Save (Ctrl+S)">
-            {saving ? 'Saving…' : 'Save'}
+          <button
+            type="button"
+            className="btn btn-accent btn-sm save-btn"
+            data-state={saveState}
+            aria-live="polite"
+            onClick={() => void save()}
+            disabled={!(dirty || saveState === 'failed') || saving || saveState === 'conflict'}
+            title="Save (Ctrl+S)"
+          >
+            {SAVE_LABEL[saveState]}
           </button>
         )}
       </AppHeader>
 
       <div className="ws">
-        <aside className="ws-side" aria-label="Project navigation">
-          <div className="tabs" role="tablist" aria-label="Workspace view">
-            <button type="button" role="tab" aria-selected={view === 'model'} onClick={() => setView('model')}>
-              Model
-            </button>
-            <button type="button" role="tab" aria-selected={view === 'compare'} onClick={() => setView('compare')}>
-              Compare
-            </button>
-          </div>
-          <span className="side-section-title">Scenarios</span>
+        <aside className="ws-side" aria-label="Scenarios">
           <ScenarioList project={project} activeId={active.id} dirtyId={dirty ? active.id : null} onSelect={requestSwitch} />
-          <span className="side-section-title">Add</span>
-          <div className="side-actions">
-            <button type="button" className="btn btn-sm" onClick={() => requestFork('shock', project.baselineScenarioId)}>
-              + Shock from baseline
-            </button>
-            <button
-              type="button"
-              className="btn btn-sm"
-              disabled={!responseSource}
-              onClick={() => responseSource && requestFork('response', responseSource.id)}
-              title={responseSource ? `Response to “${responseSource.name}”` : 'Create a shock first'}
-            >
-              + Response{responseSource ? ` to “${responseSource.name.length > 16 ? `${responseSource.name.slice(0, 15)}…` : responseSource.name}”` : ''}
-            </button>
-          </div>
+          <button type="button" className="btn btn-sm next-step" onClick={() => requestFork(nextStep.kind, nextStep.sourceId)}>
+            {nextStep.label}
+          </button>
           <Link href="/projects" className="small" style={{ marginTop: 'auto' }}>
             ← All projects
           </Link>
@@ -637,10 +612,7 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
             <div className="banner banner-error" role="alert">
               <div className="banner-body">
                 <strong>This project was changed elsewhere.</strong>
-                <span>
-                  A newer version{conflict.currentRevision ? ` (revision ${conflict.currentRevision})` : ''} was saved, for
-                  example in another tab. Nothing was overwritten, and your draft is still here, unsaved.
-                </span>
+                <span>A newer version was saved, for example in another tab. Nothing was overwritten; your draft is still here.</span>
                 <div className="banner-actions">
                   <button type="button" className="btn btn-sm btn-primary" onClick={() => void keepMyEdits()} disabled={Boolean(busyMessage)}>
                     Apply my edits to the latest version
@@ -659,228 +631,102 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
             </div>
           )}
 
-          {view === 'compare' && (
-            <>
-              <div className="ws-head">
-                <div className="ws-title">
-                  <h1>Compare scenarios</h1>
-                  <span className="small muted">Baseline, shocks and responses side by side, from saved results.</span>
-                </div>
+          <div className="ws-head">
+            <div className="ws-title">
+              <h1>{active.name}</h1>
+              {subtitle && <span className="small muted">{subtitle}</span>}
+            </div>
+            {dirty && (
+              <button type="button" className="btn btn-sm btn-ghost" onClick={() => void discard()} disabled={saving}>
+                Discard changes
+              </button>
+            )}
+          </div>
+
+          {problem && (
+            <div className="banner banner-error" role="alert">
+              <div className="banner-body">
+                <strong>{problem.code === 'NETWORK_ERROR' ? 'Not saved — network problem.' : 'Not saved.'}</strong>
+                <span>{problem.message} Your draft is kept.</span>
+                {(Object.keys(problem.fields).length > 0 || problem.invalidCells.length > 0) && (
+                  <ul>
+                    {Object.entries(problem.fields).map(([field, message]) => (
+                      <li key={field}>
+                        <span className="mono">{field.replace(/^workbook\./, '')}</span>: {message}
+                      </li>
+                    ))}
+                    {problem.invalidCells.map((c) => (
+                      <li key={c.cell}>{c.message}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
-              <div className="model-grid">
-                <ComparisonView
-                  project={project}
-                  inspect={inspect}
-                  dirtyName={dirty ? active.name : null}
-                  onInspect={(t) => setInspect(t)}
-                />
-                <InspectPanel inspection={inspect?.source === 'saved' ? inspection : null} contextLabel={inspectContext} currency={project.currency} onClose={() => setInspect(null)} />
+            </div>
+          )}
+          {live && live.errors.length > 0 && !problem && (
+            <div className="banner banner-error" role="alert">
+              <div className="banner-body">
+                <strong>Formula error</strong>
+                <span>{live.errors.map((e) => e.message).join(' ')}</span>
               </div>
-              <ComparisonCharts project={project} />
-            </>
+            </div>
           )}
 
-          <div style={{ display: view === 'model' ? 'contents' : 'none' }}>
-            <div className="ws-head">
-              <div className="ws-title">
-                <h1>
-                  {active.name}
-                  <span className={`badge badge-kind-${active.kind}`}>{KIND_LABEL[active.kind]}</span>
-                  {readOnly && <span className="badge badge-locked">🔒 Read-only</span>}
-                </h1>
-                <span className="small muted">
-                  {parent ? `Forked from “${parent.name}”. ` : ''}
-                  Last saved {formatDateTime(active.updatedAt)} · project revision {project.revision}
-                </span>
-              </div>
-              {!readOnly && dirty && (
-                <div className="row">
-                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => void discard()} disabled={saving}>
-                    Discard changes
-                  </button>
-                </div>
-              )}
-            </div>
+          <MetricCards
+            metrics={live?.metrics ?? null}
+            errors={live?.errors ?? []}
+            currency={project.currency}
+            baselineProfit={baseline?.calculation.metrics.profit ?? null}
+            isBaseline={active.kind === 'baseline'}
+            activeKey={inspect?.source === 'draft' ? inspect.key : null}
+            onInspect={(key: BakeryResultKey) => setInspect({ key, source: 'draft' })}
+          />
 
-            {project.demo && (
-              <div className="banner banner-demo">
-                <div className="banner-body">
-                  <strong>Fictional demo figures</strong>
-                  <span>These numbers are made up for learning. They are not real business data or estimates.</span>
-                </div>
-              </div>
-            )}
-            {readOnly && (
-              <div className="banner banner-info">
-                <div className="banner-body">
-                  <strong>The baseline is frozen.</strong>
-                  <span>
-                    Other scenarios are compared against it, so it can no longer change. You can still inspect every formula.
-                    To start from different figures, create a new project.
-                  </span>
-                </div>
-              </div>
-            )}
-            {!project.demo && allZero && active.kind === 'baseline' && !readOnly && (
-              <div className="banner banner-info">
-                <div className="banner-body">
-                  <strong>No figures entered yet.</strong>
-                  <span>All inputs start at zero. Enter your own figures in column B of the sheet or with the input controls.</span>
-                </div>
-              </div>
-            )}
-            {problem && (
-              <div className="banner banner-error" role="alert">
-                <div className="banner-body">
-                  <strong>{problem.code === 'NETWORK_ERROR' ? 'Not saved — network problem.' : 'Not saved.'}</strong>
-                  <span>{problem.message} Your draft is kept.</span>
-                  {(Object.keys(problem.fields).length > 0 || problem.invalidCells.length > 0) && (
-                    <ul>
-                      {Object.entries(problem.fields).map(([field, message]) => (
-                        <li key={field}>
-                          <span className="mono">{field.replace(/^workbook\./, '')}</span>: {message}
-                        </li>
-                      ))}
-                      {problem.invalidCells.map((c) => (
-                        <li key={c.cell}>{c.message}</li>
-                      ))}
-                    </ul>
-                  )}
-                  <div className="banner-actions">
-                    <button type="button" className="btn btn-sm" onClick={() => void save()} disabled={saving}>
-                      Try again
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-            {live && live.errors.length > 0 && !problem && (
-              <div className="banner banner-error" role="alert">
-                <div className="banner-body">
-                  <strong>Formula error</strong>
-                  <span>{live.errors.map((e) => e.message).join(' ')}</span>
-                </div>
-              </div>
-            )}
-
-            <MetricCards
-              metrics={live?.metrics ?? null}
-              errors={live?.errors ?? []}
-              currency={project.currency}
-              baselineProfit={baseline?.calculation.metrics.profit ?? null}
-              isBaseline={active.kind === 'baseline'}
-              activeKey={inspect?.source === 'draft' ? inspect.key : null}
-              onInspect={(key: BakeryResultKey) => setInspect({ key, source: 'draft' })}
-            />
-            <p className="tiny muted" style={{ marginTop: -6 }}>
-              {dirty
-                ? 'Preview of your unsaved draft, calculated by Univer in your browser. Saving recalculates it on the server.'
-                : 'Saved results, calculated by Univer.'}{' '}
-              Profit change compares against the saved baseline.
-            </p>
-
-            <div className="model-grid">
-              <div className="stack" style={{ gap: 14, minWidth: 0 }}>
-                <section className="card sheet-card" aria-label="Spreadsheet">
-                  <div className="sheet-card-head">
-                    <h2 style={{ fontSize: '1rem' }}>Spreadsheet</h2>
-                    <span className="tiny muted">
-                      {readOnly ? 'Read-only. Click a result cell to inspect it.' : 'Edit the blue input cells B2:B9. Labels and formulas are fixed.'}
-                    </span>
-                  </div>
-                  <div className="sheet-scroll">
-                    <div className="sheet-host">
-                      {editorError ? (
-                        <div className="sheet-overlay" role="alert" style={{ flexDirection: 'column', padding: 20, textAlign: 'center' }}>
-                          <strong>The spreadsheet could not start.</strong>
-                          <span className="small">{editorError}</span>
-                          <button type="button" className="btn btn-sm" onClick={() => window.location.reload()}>
-                            Reload page
-                          </button>
+          <div className="model-grid">
+            <section className="card sheet-card" aria-label="Spreadsheet">
+              <div className="sheet-scroll">
+                <div className="sheet-host">
+                  {editorError ? (
+                    <div className="sheet-overlay" role="alert" style={{ flexDirection: 'column', padding: 20, textAlign: 'center' }}>
+                      <strong>The spreadsheet could not start.</strong>
+                      <span className="small">{editorError}</span>
+                      <button type="button" className="btn btn-sm" onClick={() => window.location.reload()}>
+                        Reload page
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <SpreadsheetEditor license={univerLicense} onReady={setAdapter} onError={setEditorError} />
+                      {sheetLoading && (
+                        <div className="sheet-overlay" role="status">
+                          <span className="spinner" aria-hidden /> Calculating…
                         </div>
-                      ) : (
-                        <>
-                          <SpreadsheetEditor license={univerLicense} onReady={setAdapter} onError={setEditorError} />
-                          {sheetLoading && (
-                            <div className="sheet-overlay" role="status">
-                              <span className="spinner" aria-hidden /> Calculating…
-                            </div>
-                          )}
-                        </>
                       )}
-                    </div>
-                  </div>
-                  <div className="sheet-foot">
-                    <span>Univer spreadsheet · formulas in B11:B16</span>
-                    {changes.length > 0 && <span>{changes.length} input{changes.length === 1 ? '' : 's'} differ from “{parent?.name}”</span>}
-                    <span>Ctrl+S to save</span>
-                  </div>
-                </section>
-                {!readOnly && draft && (
-                  <section className="card panel" aria-labelledby="details-heading">
-                    <div className="panel-head">
-                      <h3 id="details-heading">Scenario details</h3>
-                    </div>
-                    <div className="panel-body">
-                      <div className="field">
-                        <label htmlFor="scn-name">Name</label>
-                        <input
-                          id="scn-name"
-                          value={draft.name}
-                          maxLength={80}
-                          onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                          aria-invalid={Boolean(fieldProblems.name) || draft.name.trim() === ''}
-                        />
-                        {draft.name.trim() === '' && <span className="error-text">Name is required.</span>}
-                      </div>
-                      <div className="field">
-                        <label htmlFor="scn-notes">Notes</label>
-                        <textarea id="scn-notes" value={draft.notes} maxLength={5000} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} />
-                      </div>
-                    </div>
-                  </section>
-                )}
-                {readOnly && active.notes && (
-                  <section className="card card-pad small">
-                    <strong>Notes:</strong> <span className="muted">{active.notes}</span>
-                  </section>
-                )}
+                    </>
+                  )}
+                </div>
               </div>
-              <div className="stack" style={{ gap: 14, minWidth: 0 }}>
-                <InspectPanel
-                  inspection={inspect?.source === 'draft' ? inspection : null}
-                  contextLabel={inspectContext}
-                  currency={project.currency}
-                  onClose={() => setInspect(null)}
-                />
-                <InputsPanel
-                  live={live}
-                  parentInputs={parent?.calculation.inputs}
-                  parentName={parent?.name}
-                  readOnly={readOnly || sheetLoading}
-                  currency={project.currency}
-                  priceState={priceState}
-                  assumptions={draft?.assumptions ?? active.assumptions}
-                  parentAssumptions={parent?.assumptions}
-                  serverFields={fieldProblems}
-                  onCommit={commitInput}
-                  onConfirmUnits={confirmUnits}
-                />
-                <details className="card card-pad small">
-                  <summary style={{ cursor: 'pointer', fontWeight: 600 }}>What this template assumes</summary>
-                  <ul style={{ margin: '8px 0 0', paddingLeft: 18 }} className="muted">
-                    <li>All costs are monthly except ingredient cost per unit.</li>
-                    <li>One product; every unit entered is sold.</li>
-                    <li>Energy, rent, wages, other expenses and delivery are independent monthly inputs.</li>
-                    <li>Waste, tax, financing, seasonality and volume-driven energy use are not modelled.</li>
-                    <li>A price change never changes sales automatically — you enter expected sales.</li>
-                  </ul>
-                </details>
-              </div>
-            </div>
+            </section>
+            <InputsPanel
+              live={live}
+              parentInputs={parent?.calculation.inputs}
+              readOnly={readOnly || sheetLoading}
+              currency={project.currency}
+              priceState={priceState}
+              assumptions={draft?.assumptions ?? active.assumptions}
+              serverFields={fieldProblems}
+              onCommit={commitInput}
+              onConfirmUnits={confirmUnits}
+            />
           </div>
+
+          <ComparisonView project={project} inspect={inspect} dirty={dirty} onInspect={(t) => setInspect(t)} />
         </main>
       </div>
+
+      {inspection && (
+        <InspectPanel inspection={inspection} contextLabel={inspectContext} currency={project.currency} onClose={() => setInspect(null)} />
+      )}
 
       {pending && (
         <Dialog
@@ -904,7 +750,6 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
                   setPending(null);
                   await discard();
                   if (next.type === 'switch') {
-                    setView('model');
                     await switchTo(next.scenarioId);
                   } else setForking({ kind: next.kind, sourceId: next.sourceId });
                 }}
@@ -921,7 +766,6 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
                   const saved = await save();
                   if (!saved) return;
                   if (next.type === 'switch') {
-                    setView('model');
                     await switchTo(next.scenarioId);
                   } else setForking({ kind: next.kind, sourceId: next.sourceId });
                 }}

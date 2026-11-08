@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api, ApiClientError, errorMessage } from '@/lib/api/client';
 import { createProjectRequestSchema, type ProjectSummary } from '@/lib/contracts/project';
 import { BAKERY_TEMPLATE_ID } from '@/lib/templates/bakery';
-import { BAKERY_TEMPLATE } from '@/lib/templates';
 import { formatDateTime } from '@/lib/format';
 import { AppHeader } from '@/components/ui/AppHeader';
 
@@ -65,18 +64,12 @@ export function ProjectsHome() {
       <main className="page">
         <div className="hero">
           <h1>Your projects</h1>
-          <p>
-            Model a business in a real spreadsheet, introduce a change, and compare possible responses side by side. Every
-            figure is calculated by the spreadsheet, and every assumption stays visible.
-          </p>
+
         </div>
         <div className="projects-grid">
           <section className="card" aria-labelledby="saved-heading">
-            <div className="card-pad row" style={{ justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
+            <div className="card-pad" style={{ borderBottom: '1px solid var(--border)' }}>
               <h2 id="saved-heading">Saved projects</h2>
-              <button type="button" className="btn btn-sm btn-ghost" onClick={() => void load()}>
-                Refresh
-              </button>
             </div>
             {list.status === 'loading' && (
               <div className="center-state" role="status">
@@ -154,7 +147,6 @@ export function ProjectsHome() {
                   onChange={(e) => setCurrency(e.target.value.toUpperCase())}
                   maxLength={3}
                   aria-invalid={Boolean(fieldErrors.currency)}
-                  aria-describedby="p-currency-hint"
                   style={{ maxWidth: 140 }}
                 />
                 <datalist id="currency-options">
@@ -162,16 +154,7 @@ export function ProjectsHome() {
                     <option key={c} value={c} />
                   ))}
                 </datalist>
-                <span className="hint" id="p-currency-hint">
-                  Three-letter ISO code. Every scenario in the project uses it; there is no conversion.
-                </span>
                 {fieldErrors.currency && <span className="error-text">{fieldErrors.currency}</span>}
-              </div>
-              <div className="field">
-                <span className="field-label">Template</span>
-                <div className="muted small">
-                  <strong style={{ color: 'var(--text)' }}>{BAKERY_TEMPLATE.name}</strong> — one product, monthly costs.
-                </div>
               </div>
               <fieldset className="field" style={{ border: 0, padding: 0, margin: 0 }}>
                 <legend className="field-label" style={{ marginBottom: 6 }}>
@@ -204,14 +187,6 @@ export function ProjectsHome() {
                   {creating ? 'Creating…' : 'Create project'}
                 </button>
               </div>
-              <details className="small muted">
-                <summary>What the bakery template assumes</summary>
-                <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
-                  {BAKERY_TEMPLATE.simplifications.map((s) => (
-                    <li key={s}>{s}</li>
-                  ))}
-                </ul>
-              </details>
             </form>
           </section>
         </div>

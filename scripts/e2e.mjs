@@ -27,7 +27,11 @@ let failures = 0;
 const check = (label, cond, detail = '') => { console.log(`${cond ? 'PASS' : 'FAIL'}  ${label}${!cond && detail ? `  (${detail})` : ''}`); if (!cond) failures++; };
 
 async function metrics(page) { return (await page.locator('.metrics').innerText()).replace(/\s+/g, ' '); }
-async function saveState(page) { return (await page.locator('.save-state').innerText()).trim(); }
+/** The save button is the save state; a read-only baseline has no save button. */
+async function saveState(page) {
+  const b = page.locator('.save-btn');
+  return (await b.count()) ? await b.getAttribute('data-state') : 'readonly';
+}
 async function ready(page) {
   await page.waitForSelector('.sheet-host canvas', { timeout: 60000 });
   await page.waitForFunction(() => !document.querySelector('.sheet-host .sheet-overlay'), null, { timeout: 60000 });
@@ -49,7 +53,7 @@ async function typeInCell(page, row, col, text) {
   await page.waitForTimeout(1200);
 }
 async function waitSaved(page) {
-  await page.waitForFunction(() => document.querySelector('.save-state')?.textContent?.includes('Saved'), null, { timeout: 30000 });
+  await page.waitForFunction(() => document.querySelector('.save-btn')?.getAttribute('data-state') === 'saved', null, { timeout: 30000 });
 }
 
 (async () => {
@@ -82,7 +86,7 @@ async function waitSaved(page) {
   await page.getByRole('button', { name: 'Create project' }).click();
   await page.waitForURL(/projects\//);
   await ready(page);
-  check('demo label shown', await page.getByText('Fictional demo figures', { exact: true }).isVisible());
+  check('demo label shown', await page.getByText('Fictional demo', { exact: true }).isVisible());
   let m = await metrics(page);
   check('baseline fixture', m.includes('£5,000') && m.includes('£4,300') && m.includes('£700') && m.includes('14.0%'), m);
 
@@ -90,7 +94,7 @@ async function waitSaved(page) {
   await typeInCell(page, 5, 1, '450');
   m = await metrics(page);
   check('sheet edit recalculates total costs', m.includes('£4,350') && m.includes('£650'), m);
-  check('unsaved state', (await saveState(page)).includes('Unsaved'));
+  check('unsaved state', (await saveState(page)) === 'unsaved');
   check('control follows sheet', (await page.locator('#input-monthlyEnergy').inputValue()) === '450');
   // Edit via control
   await page.locator('#input-monthlyEnergy').fill('400');
@@ -113,13 +117,13 @@ async function waitSaved(page) {
   // Save
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await waitSaved(page);
-  check('baseline saved', (await saveState(page)).includes('Saved'));
+  check('baseline saved', (await saveState(page)) === 'saved');
 
   // 3. Shock
-  await page.getByRole('button', { name: '+ Shock from baseline' }).click();
-  check('freeze warning shown', await page.getByText('This freezes the baseline.').isVisible());
+  await page.getByRole('button', { name: '+ Add a shock' }).click();
+  check('freeze warning shown', await page.getByText('The baseline will be locked', { exact: false }).isVisible());
   await page.locator('#fork-monthlyEnergy').fill('600');
-  await page.getByRole('button', { name: 'Create shock' }).click();
+  await page.getByRole('button', { name: 'Add shock' }).click();
   await page.waitForSelector('.dialog', { state: 'detached' });
   await waitSaved(page);
   await ready(page);
@@ -131,7 +135,7 @@ async function waitSaved(page) {
   await page.getByLabel('Change the price').check();
   await page.locator('#fork-unitPrice').fill('5.5');
   await page.locator('#fork-monthlyUnits').fill('950');
-  await page.getByRole('button', { name: 'Create response' }).click();
+  await page.getByRole('button', { name: 'Add response' }).click();
   await page.waitForSelector('.dialog', { state: 'detached' });
   await waitSaved(page);
   await ready(page);
@@ -146,7 +150,7 @@ async function waitSaved(page) {
   check('confirmation requested after price edit', await page.getByText('Expected monthly sales needed').isVisible());
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await page.waitForTimeout(800);
-  check('save blocked without confirmation', (await saveState(page)).includes('failed'), await saveState(page));
+  check('save blocked without confirmation', (await saveState(page)) === 'failed', await saveState(page));
   await page.locator('#confirm-units').fill('900');
   await page.getByRole('button', { name: 'Confirm expected sales' }).click();
   await page.waitForTimeout(1000);
@@ -154,7 +158,7 @@ async function waitSaved(page) {
   check('confirmed units applied', m.includes('£5,400'), m);
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await waitSaved(page);
-  check('confirmed price change saved', (await saveState(page)).includes('Saved'));
+  check('confirmed price change saved', (await saveState(page)) === 'saved');
   // Restore fixture values
   await page.locator('#input-unitPrice').fill('5.5'); await page.locator('#input-unitPrice').press('Enter');
   await page.waitForTimeout(800);
@@ -165,13 +169,13 @@ async function waitSaved(page) {
   await waitSaved(page);
 
   // 5. Supplier response from the shock
-  await page.locator('.scenario-item', { hasText: 'Energy cost increase' }).click();
+  await page.locator('.scenario-item', { hasText: 'Energy £600/month' }).click();
   await ready(page);
   await page.getByRole('button', { name: /\+ Response to/ }).click();
   await page.getByLabel('Switch supplier').check();
   await page.locator('#fork-ingredientCostPerUnit').fill('1.8');
   await page.locator('#fork-monthlyDelivery').fill('100');
-  await page.getByRole('button', { name: 'Create response' }).click();
+  await page.getByRole('button', { name: 'Add response' }).click();
   await page.waitForSelector('.dialog', { state: 'detached' });
   await waitSaved(page);
   await ready(page);
@@ -181,7 +185,7 @@ async function waitSaved(page) {
   // 6. Frozen baseline
   await page.locator('.scenario-item', { hasText: 'Baseline' }).first().click();
   await ready(page);
-  check('baseline read-only', (await saveState(page)).includes('Read-only') && await page.locator('#input-unitPrice').isDisabled());
+  check('baseline read-only', (await saveState(page)) === 'readonly' && await page.locator('#input-unitPrice').isDisabled() && await page.getByText('Read-only: other scenarios').isVisible());
   await typeInCell(page, 3, 1, '9');
   m = await metrics(page);
   check('frozen baseline sheet edit blocked', m.includes('£5,000'), m);
@@ -194,12 +198,11 @@ async function waitSaved(page) {
   check('inspect from sheet cell', insp.includes('=B11-B14'), insp.slice(0, 80));
 
   // 8. Compare
-  await page.getByRole('tab', { name: 'Compare' }).click();
-  await page.waitForTimeout(500);
+  await page.locator('#compare').scrollIntoViewIfNeeded();
   const table = (await page.locator('table.compare').innerText()).replace(/\s+/g, ' ');
-  check('compare table has all four', ['Baseline', 'Energy cost increase', 'Price change', 'Switch supplier'].every((n) => table.includes(n)), table);
+  check('compare table has all four', ['Baseline', 'Energy £600/month', 'Price £5.50', 'New supplier £1.80/unit'].every((n) => table.includes(n)), table);
   check('compare profit changes', table.includes('−£200') && table.includes('+£125') && table.includes('−£100'), table);
-  await page.getByRole('button', { name: 'Inspect Profit for Price change' }).click();
+  await page.getByRole('button', { name: 'Inspect Profit for Price £5.50' }).click();
   const insp2 = await page.locator('.inspect').first().innerText();
   check('inspect from comparison', insp2.includes('=B11-B14') && insp2.includes('825'), insp2.slice(0, 200));
   await shot(page, 'compare', { fullPage: true });
@@ -209,12 +212,11 @@ async function waitSaved(page) {
   await page.reload();
   await page.waitForSelector('table.compare');
   const table2 = (await page.locator('table.compare').innerText()).replace(/\s+/g, ' ');
-  check('reload keeps compare view and data', table2.includes('+£125') && table2.includes('Switch supplier'));
-  await page.getByRole('tab', { name: 'Model' }).click();
+  check('reload keeps the open scenario and data', table2.includes('+£125') && table2.includes('New supplier £1.80/unit'));
   await ready(page);
 
   // 10. Zero revenue + negative profit
-  await page.locator('.scenario-item', { hasText: 'Switch supplier' }).click();
+  await page.locator('.scenario-item', { hasText: 'New supplier £1.80/unit' }).click();
   await ready(page);
   await page.locator('#input-monthlyUnits').fill('0'); await page.locator('#input-monthlyUnits').press('Enter');
   await page.waitForTimeout(1200);
@@ -223,7 +225,7 @@ async function waitSaved(page) {
   await shot(page, 'zero');
 
   // 11. Unsaved switch prompt
-  await page.locator('.scenario-item', { hasText: 'Price change' }).click();
+  await page.locator('.scenario-item', { hasText: 'Price £5.50' }).click();
   check('unsaved switch prompts', await page.getByText('Save your changes first?').isVisible());
   await page.getByRole('button', { name: 'Cancel' }).click();
 
@@ -231,26 +233,27 @@ async function waitSaved(page) {
   await page.route('**/api/projects/*/scenarios/*', (route) => route.request().method() === 'PUT' ? route.abort() : route.continue());
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await page.waitForTimeout(1000);
-  check('network failure shows failed', (await saveState(page)).includes('failed') && await page.getByText('Not saved — network problem.').isVisible());
+  check('network failure shows failed', (await saveState(page)) === 'failed' && await page.getByText('Not saved — network problem.').isVisible());
   await page.unroute('**/api/projects/*/scenarios/*');
 
   // 13. Conflict: another tab saves first
   const page2 = await ctx.newPage();
-  await page2.goto(url.replace(/view=compare/, ''));
-  await page2.getByRole('tab', { name: 'Model' }).click().catch(() => {});
-  await page2.locator('.scenario-item', { hasText: 'Energy cost increase' }).click();
+  await page2.goto(url);
+  await page2.locator('.scenario-item', { hasText: 'Energy £600/month' }).click();
   await ready(page2);
-  await page2.locator('#scn-notes').fill('Changed in another tab');
+  await page2.locator('#input-monthlyRent').fill('650');
+  await page2.locator('#input-monthlyRent').press('Enter');
+  await page2.waitForTimeout(1000);
   await page2.getByRole('button', { name: 'Save', exact: true }).click();
   await waitSaved(page2);
   await page2.close();
-  await page.getByRole('button', { name: 'Try again' }).click();
+  await page.getByRole('button', { name: 'Retry save' }).click();
   await page.waitForTimeout(1200);
-  check('conflict detected', (await saveState(page)).includes('conflict') && await page.getByText('This project was changed elsewhere.').isVisible());
+  check('conflict detected', (await saveState(page)) === 'conflict' && await page.getByText('This project was changed elsewhere.').isVisible());
   await shot(page, 'conflict');
   await page.getByRole('button', { name: 'Apply my edits to the latest version' }).click();
   await page.waitForTimeout(2500);
-  check('edits reapplied, unsaved', (await saveState(page)).includes('Unsaved') && (await page.locator('#input-monthlyUnits').inputValue()) === '0');
+  check('edits reapplied, unsaved', (await saveState(page)) === 'unsaved' && (await page.locator('#input-monthlyUnits').inputValue()) === '0');
   await page.getByRole('button', { name: 'Discard changes' }).click();
   await page.waitForTimeout(1500);
   m = await metrics(page);
@@ -258,7 +261,7 @@ async function waitSaved(page) {
 
   // 14. Phone layout
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
-  await phone.goto(url.replace(/[?&]view=compare/, ''));
+  await phone.goto(url);
   await ready(phone);
   await shot(phone, 'phone', { fullPage: false });
   const overflow = await phone.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

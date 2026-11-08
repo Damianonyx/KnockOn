@@ -12,7 +12,6 @@ export interface ChartRow {
   revenue: number | null;
   totalCosts: number | null;
   profit: number | null;
-  profitChange: number | null;
 }
 
 const SERIES = [
@@ -112,77 +111,6 @@ export function ResultsBarChart({ rows, currency }: { rows: ChartRow[]; currency
           );
         })}
         <line className="zero-line" x1={m.left} x2={W - m.right} y1={zeroY} y2={zeroY} />
-      </svg>
-      {tip && (
-        <div className="chart-tooltip" style={{ left: `${tip.x}%`, top: `${tip.y}%` }}>
-          <strong>{tip.title}</strong>
-          {tip.lines.map((l) => (
-            <span key={l}>{l}</span>
-          ))}
-        </div>
-      )}
-      </div>
-    </div>
-  );
-}
-
-export function ProfitChangeChart({ rows, currency }: { rows: ChartRow[]; currency: string }) {
-  const [tip, setTip] = useState<Tip>(null);
-  const data = rows.filter((r) => typeof r.profitChange === 'number');
-  const values = data.map((r) => r.profitChange as number);
-  const extent = niceExtent(values);
-  const W = 520;
-  const rowH = 40;
-  const m = { top: 8, right: 80, bottom: 26, left: 150 };
-  const H = m.top + m.bottom + Math.max(data.length, 1) * rowH;
-  const iw = W - m.left - m.right;
-  const pad = 14;
-  const x = (v: number) => m.left + pad + ((v - extent[0]) / (extent[1] - extent[0])) * (iw - pad);
-  const zeroX = x(0);
-  return (
-    <div className="card chart-card">
-      <h3>Profit change against baseline</h3>
-      <div className="legend" aria-hidden>
-        <span>
-          <i style={{ background: 'var(--pos)' }} /> Higher than baseline
-        </span>
-        <span>
-          <i style={{ background: 'var(--neg)' }} /> Lower than baseline
-        </span>
-      </div>
-      <div style={{ position: 'relative' }}>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Profit change against the baseline for each scenario. The same figures are in the table above." onMouseLeave={() => setTip(null)}>
-        <g className="axis">
-          {ticks(extent, 4).map((t) => (
-            <g key={t}>
-              <line className="grid-line" x1={x(t)} x2={x(t)} y1={m.top} y2={H - m.bottom} />
-              <text x={x(t)} y={H - m.bottom + 14} textAnchor="middle">
-                {compact(t, currency)}
-              </text>
-            </g>
-          ))}
-        </g>
-        {data.map((r, i) => {
-          const v = r.profitChange as number;
-          const cy = m.top + i * rowH + rowH / 2;
-          const x0 = Math.min(zeroX, x(v));
-          const w = Math.max(Math.abs(x(v) - zeroX), v === 0 ? 0 : 1);
-          const show = () =>
-            setTip({ x: (Math.max(x(v), zeroX) / W) * 100, y: ((cy - 8) / H) * 100, title: r.name, lines: [`Profit change: ${formatMoney(v, currency, { signed: true })}`] });
-          return (
-            <g key={r.id} onMouseEnter={show}>
-              <rect x={0} y={cy - rowH / 2} width={W} height={rowH} fill="transparent" />
-              <text className="cat-label" x={m.left - 8} y={cy} dy="0.32em" textAnchor="end">
-                {r.name.length > 18 ? `${r.name.slice(0, 17)}…` : r.name}
-              </text>
-              {v !== 0 && <rect x={x0} y={cy - 9} width={w} height={18} rx={3} fill={v > 0 ? 'var(--pos)' : 'var(--neg)'} />}
-              <text className="bar-label" x={Math.max(x(v), zeroX) + 6} y={cy} dy="0.32em" textAnchor="start">
-                {v === 0 ? 'No change' : formatMoney(v, currency, { signed: true })}
-              </text>
-            </g>
-          );
-        })}
-        <line className="zero-line" x1={zeroX} x2={zeroX} y1={m.top} y2={H - m.bottom} />
       </svg>
       {tip && (
         <div className="chart-tooltip" style={{ left: `${tip.x}%`, top: `${tip.y}%` }}>

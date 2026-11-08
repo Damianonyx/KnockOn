@@ -1,8 +1,9 @@
 'use client';
 import type { Project, Scenario } from '@/lib/contracts/project';
 import { formatMoney } from '@/lib/format';
-import { isReadOnly, KIND_LABEL, orderScenarios } from '@/lib/scenarios';
+import { baselineOf, changeAgainst, orderScenarios } from '@/lib/scenarios';
 
+/** Baseline, shocks and responses as an indented list, each with its saved profit and change. */
 export function ScenarioList({
   project,
   activeId,
@@ -14,20 +15,17 @@ export function ScenarioList({
   dirtyId: string | null;
   onSelect: (s: Scenario) => void;
 }) {
+  const baseProfit = baselineOf(project)?.calculation.metrics.profit ?? null;
   return (
     <nav aria-label="Scenarios">
       <ul className="scenario-list">
         {orderScenarios(project).map((s) => {
           const indent = s.kind === 'shock' ? 'indent-1' : s.kind === 'response' ? 'indent-2' : '';
-          const profit = s.calculation.metrics.profit;
+          const profit = s.calculation.metrics.profit ?? null;
+          const change = s.kind === 'baseline' ? null : changeAgainst(profit, baseProfit);
           return (
             <li key={s.id}>
-              <button
-                type="button"
-                className={`scenario-item ${indent}`}
-                aria-current={s.id === activeId}
-                onClick={() => onSelect(s)}
-              >
+              <button type="button" className={`scenario-item ${indent}`} aria-current={s.id === activeId} onClick={() => onSelect(s)}>
                 <span className="s-name">
                   {s.name}
                   {s.id === dirtyId && (
@@ -36,12 +34,11 @@ export function ScenarioList({
                     </span>
                   )}
                 </span>
-                <span className="s-meta">
-                  <span className={`badge badge-kind-${s.kind}`}>{KIND_LABEL[s.kind]}</span>
-                  {isReadOnly(project, s) && <span className="badge badge-locked">🔒 Frozen</span>}
-                  <span className="num">
-                    {typeof profit === 'number' ? `${profit < 0 ? 'Loss' : 'Profit'} ${formatMoney(profit, project.currency)}` : ''}
-                  </span>
+                <span className="s-meta num">
+                  {typeof profit === 'number' && <span>{formatMoney(profit, project.currency)}</span>}
+                  {change !== null && change !== 0 && (
+                    <span className={change > 0 ? 'delta-pos' : 'delta-neg'}>{formatMoney(change, project.currency, { signed: true })}</span>
+                  )}
                 </span>
               </button>
             </li>

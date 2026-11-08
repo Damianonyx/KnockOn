@@ -57,14 +57,13 @@ export function MetricCards({
         } else if (key === 'marginFraction') {
           display = formatMargin(value);
           if (value === null) sub = <span>Revenue is zero, so margin is not defined.</span>;
-          else sub = <span>Profit ÷ revenue</span>;
         } else {
           display = formatMoney(value, currency);
           if (key === 'profit') {
             const label2 = outcomeLabel(value);
             sub = (
               <>
-                <span className={`badge ${isLoss ? 'badge-bad' : value === 0 ? 'badge-locked' : 'badge-good'}`}>{label2}</span>
+                {label2 !== 'Profit' && <span className={`badge ${isLoss ? 'badge-bad' : 'badge-locked'}`}>{label2}</span>}
                 {!isBaseline && (
                   <span>
                     vs baseline <DeltaText value={changeAgainst(value, baselineProfit)} currency={currency} />
@@ -72,8 +71,6 @@ export function MetricCards({
                 )}
               </>
             );
-          } else if (key === 'revenue' && value === 0) {
-            sub = <span>No sales revenue entered.</span>;
           }
         }
         return (
@@ -83,12 +80,9 @@ export function MetricCards({
             className={`metric${isLoss ? ' loss' : ''}${error ? ' error' : ''}`}
             aria-pressed={activeKey === key}
             onClick={() => onInspect(key)}
-            title={`Inspect the formula in ${cell}`}
+            title={`How ${label.toLowerCase()} is calculated`}
           >
-            <span className="m-label">
-              <span>{label}</span>
-              <span className="mono tiny muted">{cell}</span>
-            </span>
+            <span className="m-label">{label}</span>
             <span className="m-value">{display}</span>
             <span className="m-sub">{sub}</span>
           </button>

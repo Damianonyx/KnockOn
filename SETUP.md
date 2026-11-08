@@ -42,7 +42,7 @@ Open http://localhost:3000 (or the port `npm start` reports). The pages are:
 | --- | --- |
 | `/` | Landing page: the "Meet Knock-On," hero with Knocky, the halftone domino mascot, and its intro animation, then "How it works" and an "Open app" section. |
 | `/projects` | Saved projects and the create-project form. |
-| `/projects/:projectId` | The workspace: scenario list, Univer spreadsheet, input controls, metric cards, and the inspect panel. Add `?view=compare` for the comparison table and charts; the URL also keeps the open scenario, so a reload returns to it. |
+| `/projects/:projectId` | The workspace: scenario list with one "next step" button, Univer spreadsheet, input controls, metric cards, and the comparison table and chart below. Clicking a result opens its formula in a slide-in panel. The URL keeps the open scenario, so a reload returns to it. |
 
 The landing hero draws Knocky's halftone dots on a canvas from a fixed-seed generator (`src/components/landing/halftone.ts`), so every browser draws the same mascot. Its intro plays once per page load; with reduced motion turned on in the device settings, the finished hero shows straight away. Fonts (Gloock and Inter) load through `next/font`.
 
@@ -57,6 +57,10 @@ Interface code lives in `src/components/` (`landing/`, `projects/`, `workspace/`
 All endpoints are described in [docs/API_CONTRACT.md](docs/API_CONTRACT.md): templates, projects, scenario forks and saves, and explanations. The server recalculates every saved workbook with Univer and ignores calculated values sent by the browser.
 
 Explanations call Ling 3.2 Flash from the server at `POST /api/projects/:projectId/scenarios/:scenarioId/explanation`. Without `ANTLING_API_KEY` that route returns 503 and everything else keeps working. Each explanation uses API credits.
+
+## Interface principles
+
+Two rules guide the interface: cut settings pages, filter bars and mode switches (pick the right default and hide the rest), and never solve a design problem by adding more UI or a code problem by adding another layer. Remove parts until the right action is the only obvious one.
 
 ## Univer
 

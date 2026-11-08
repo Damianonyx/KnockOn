@@ -72,9 +72,7 @@ function InputControl({
     <div className={`input-row${changed ? ' is-changed' : ''}`}>
       <label htmlFor={id}>
         <span>{label}</span>
-        <span className="cellref">
-          {cell} · {isMoneyInput(inputKey) ? (inputKey === 'ingredientCostPerUnit' || inputKey === 'unitPrice' ? `${currency} per unit` : `${currency} per month`) : 'units per month'}
-        </span>
+        <span className="cellref">{cell}</span>
         {changed && (
           <span className="changed">
             Changed from {isMoneyInput(inputKey) ? formatMoney(parentValue ?? null, currency) : formatNumber(parentValue ?? null)}
@@ -215,34 +213,31 @@ function PriceConfirmationBox({
 export function InputsPanel({
   live,
   parentInputs,
-  parentName,
   readOnly,
   currency,
   priceState,
   assumptions,
-  parentAssumptions,
   serverFields,
   onCommit,
   onConfirmUnits,
 }: {
   live: LiveState | null;
   parentInputs: InputValues | undefined;
-  parentName: string | undefined;
   readOnly: boolean;
   currency: string;
   priceState: PriceConfirmation;
   assumptions: Assumption[];
-  parentAssumptions: Assumption[] | undefined;
   serverFields: Record<string, string>;
   onCommit: (key: BakeryInputKey, value: number) => Promise<void>;
   onConfirmUnits: (monthlyUnits: number, note: string) => Promise<void>;
 }) {
   const issueFor = (cell: string) => live?.issues.find((i) => i.field === `workbook.${cell}`)?.message;
+  // Demo figures are already labelled in the header; only the user's own assumptions are listed.
+  const own = assumptions.filter((a) => a.source === 'user' && a.note);
   return (
     <section className="card panel" aria-labelledby="inputs-heading">
       <div className="panel-head">
         <h3 id="inputs-heading">Inputs</h3>
-        <span className="tiny muted">Edits the same cells as the sheet</span>
       </div>
       <div className="panel-body">
         {priceState.required && (
@@ -270,37 +265,16 @@ export function InputsPanel({
             onCommit={onCommit}
           />
         ))}
-        {parentName && <p className="tiny muted">Highlighted inputs differ from “{parentName}”.</p>}
-        <div className="stack" style={{ gap: 6 }}>
-          <h3 style={{ fontSize: '0.9rem' }}>Assumptions</h3>
-          {assumptions.length === 0 ? (
-            <p className="small muted">No assumptions recorded for this scenario.</p>
-          ) : (
+        {own.length > 0 && (
+          <div className="stack" style={{ gap: 6 }}>
+            <h3 style={{ fontSize: '0.9rem' }}>Your assumptions</h3>
             <ul className="assumption-list">
-              {assumptions.map((a) => {
-                const label = BAKERY_INPUTS.find((m) => m.key === a.inputKey)?.label ?? a.inputKey;
-                const inherited = parentAssumptions?.some(
-                  (p) => p.inputKey === a.inputKey && p.note === a.note && p.source === a.source && p.confirmed === a.confirmed,
-                );
-                return (
-                  <li key={a.inputKey}>
-                    <span className="a-head">
-                      {label}
-                      {a.source === 'demo' ? (
-                        <span className="badge badge-demo">Fictional demo</span>
-                      ) : (
-                        <span className="badge badge-locked">Your assumption</span>
-                      )}
-                      {a.inputKey === 'monthlyUnits' && a.confirmed && <span className="badge badge-good">Confirmed</span>}
-                      {inherited && <span className="tiny muted">inherited from {parentName}</span>}
-                    </span>
-                    <span className="muted">{a.note || 'No note.'}</span>
-                  </li>
-                );
-              })}
+              {own.map((a) => (
+                <li key={a.inputKey}>{a.note}</li>
+              ))}
             </ul>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </section>
   );
