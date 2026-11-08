@@ -12,7 +12,32 @@ For a fresh checkout, copy `.env.example` to `.env` and enter your Univer licens
 
 AntLing's [official API model listing](https://developer.ant-ling.com/en/docs/faq/), checked on November 6, 2026, confirms `Ling-3.2-flash`. Both `.env` and `.env.example` use that exact, case-sensitive ID. Access with your account still needs a live API check after you add the key.
 
-These files prepare configuration only. The app and SDK integration have not been implemented yet. License activation and API access must be verified during integration. The application must load `.env` and pass the relevant values to the SDKs. Restart the app after editing its environment. Hosted deployments need the same values entered in their environment settings.
+The backend is implemented: server-side Univer calculation, local storage, the project API, and Ling explanations. The browser spreadsheet editor and the interface are next. Next.js loads `.env` automatically; restart the app after editing it. Hosted deployments need the same values entered in their environment settings.
+
+## Run the app
+
+Requires Node.js 22.13 or later (for the built-in `node:sqlite` module).
+
+```bash
+npm ci                 # install the exact locked dependencies
+cp .env.example .env   # first time only, then fill in your values
+npm run dev            # http://localhost:3000, API under /api
+```
+
+| Command | What it does |
+| --- | --- |
+| `npm test` | Runs the backend tests: the bakery fixtures, saving and reloading, and every validation rule. No server or API key needed. |
+| `npm run typecheck` | Checks the TypeScript. |
+| `npm run build` then `npm start` | Production build and server. |
+| `npm run smoke:api` | With the app running, runs the full bakery workflow over HTTP. Set `BASE_URL` for a port other than 3000. It creates a demo project in your database. |
+
+Projects are stored in the SQLite file at `KNOCKON_DATABASE_PATH` (default `./data/knockon.db`), created on first run and excluded from Git. Delete that file to start over. Node may print an "SQLite is an experimental feature" warning; it is harmless.
+
+### API
+
+All endpoints are described in [docs/API_CONTRACT.md](docs/API_CONTRACT.md): templates, projects, scenario forks and saves, and explanations. The server recalculates every saved workbook with Univer and ignores calculated values sent by the browser.
+
+Explanations call Ling 3.2 Flash from the server at `POST /api/projects/:projectId/scenarios/:scenarioId/explanation`. Without `ANTLING_API_KEY` that route returns 503 and everything else keeps working. Each explanation uses API credits.
 
 ## Univer
 
@@ -72,6 +97,6 @@ console.log(message);
 JS
 ```
 
-If Ling is selected for explanations in the finished app, calls will run in a server route using `process.env.ANTLING_API_KEY`. Users' browsers will call that route instead of calling AntLing directly.
+Ling powers Knock-On's explanations. Calls run in a server route using `process.env.ANTLING_API_KEY`; users' browsers call that route instead of calling AntLing directly.
 
 [AntLing API quickstart](https://developer.ant-ling.com/en/docs/getting-started/quickstart/)

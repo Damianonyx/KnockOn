@@ -8,7 +8,7 @@ Knock-On is an interactive economics lab in development. It will help people mod
 
 The name comes from a knock-on effect: one change causes consequences elsewhere.
 
-> **Project status:** Early development. This repository currently contains documentation and environment configuration. The app and Univer integration are planned. This README will evolve as features are implemented and tested. Knock-On is a working name.
+> **Project status:** Early development. The backend is in place: Univer calculates every scenario on the server, projects are saved locally, and Ling 3.2 Flash explains results. The spreadsheet interface is next. This README will evolve as features are implemented and tested. Knock-On is a working name.
 
 ## The idea
 
@@ -73,7 +73,7 @@ For a fresh checkout, copy [`.env.example`](.env.example) to `.env` and fill in 
 
 The template includes settings for the Univer license files and AntLing API access, with `Ling-3.2-flash` configured as the model ID. Keep `.env`, API keys, and license files out of version control; the included `.gitignore` excludes them.
 
-Application installation and run commands will be added once the app is scaffolded. Environment configuration alone does not activate the SDK or verify API access.
+Installation and run commands are in [SETUP.md](SETUP.md#run-the-app).
 
 See [SETUP.md](SETUP.md) for configuration details and AntLing coding-tool setup.
 

@@ -173,6 +173,15 @@ export const explanationRequestSchema = z.object({
 });
 export type ExplanationRequest = z.infer<typeof explanationRequestSchema>;
 
+/** An input that differs from the parent scenario, for showing what the explanation is about. */
+export const changedInputSchema = z.object({
+  inputKey: z.string(),
+  label: z.string(),
+  cell: z.string(),
+  from: z.number().nullable(),
+  to: z.number().nullable(),
+});
+
 /** A Ling-generated explanation tied to the exact saved revision it describes. */
 export const explanationSchema = z.object({
   projectId: z.string(),
@@ -181,6 +190,7 @@ export const explanationSchema = z.object({
   model: z.string(),
   explanation: z.string(),
   generatedAt: z.string(),
+  changedInputs: z.array(changedInputSchema),
 });
 export type Explanation = z.infer<typeof explanationSchema>;
 

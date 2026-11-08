@@ -5,7 +5,7 @@
   "description": "Knock-On — interactive economics lab. See what one change sets in motion.",
   "packageManager": "npm@10.9.9",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.13.0"
   },
   "scripts": {
     "dev": "next dev",

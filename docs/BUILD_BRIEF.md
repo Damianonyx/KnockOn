@@ -79,7 +79,7 @@ A price change must never invent a demand response. Ask the user to enter or exp
 | Backend | Next.js route handlers using the Node.js runtime. |
 | Editor | Univer loaded in the browser; never imported into server rendering code. |
 | Calculations | A shared template/adapter boundary, with browser editing and server headless calculation verified against matching package versions. |
-| Local persistence | Prisma with SQLite for the local prototype; save through server routes. |
+| Local persistence | SQLite through Node's built-in `node:sqlite` module for the local prototype (changed from Prisma: no generated client, native build, or engine download); save through server routes. |
 | Input validation | Shared Zod schemas and validation repeated on the server. |
 | First comparisons | A table and metric cards; charts follow. |
 
