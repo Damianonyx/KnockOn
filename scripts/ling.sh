@@ -1,5 +1,7 @@
 #!/bin/bash
 cd "$(dirname "$0")/.." && mkdir -p backend && cd backend
+# Clear other Anthropic/Claude login and session variables so only the Ling key is used
+for v in $(compgen -e | grep -E '^(ANTHROPIC_|CLAUDE)'); do unset "$v"; done
 export ANTHROPIC_BASE_URL=https://api.ant-ling.com/anthropic
 export ANTHROPIC_AUTH_TOKEN="$LING_API_KEY"
 export ANTHROPIC_API_KEY="$LING_API_KEY"
