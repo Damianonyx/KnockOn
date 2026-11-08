@@ -29,6 +29,7 @@ npm run dev            # http://localhost:3000, API under /api
 | `npm test` | Runs the backend tests (the bakery fixtures, saving and reloading, and every validation rule) and the interface helper tests (formatting, result inspection, the price-confirmation rule, scenario ordering). No server or API key needed. |
 | `npm run typecheck` | Checks the TypeScript. |
 | `npm run build` then `npm start` | Production build and server. |
+| `npm run e2e` | With the app running, drives the full bakery workflow in a real browser (Playwright + Chromium): create, edit in the sheet and controls, save, shock, price and supplier responses, frozen baseline, inspect, compare, reload, plus validation, zero revenue, a loss, network failure, a save conflict, and phone layout. Set `BASE_URL` for another port, `E2E_SCREENSHOTS=1` to save screenshots to `verify-results/`, `E2E_HEADED=1` to watch. It creates a demo project in your database. On a fresh machine, run `npx playwright install chromium` once first. |
 | `npm run smoke:api` | With the app running, runs the full bakery workflow over HTTP. Set `BASE_URL` for a port other than 3000. It creates a demo project in your database. |
 
 Projects are stored in the SQLite file at `KNOCKON_DATABASE_PATH` (default `./data/knockon.db`), created on first run and excluded from Git. Delete that file to start over. Node may print an "SQLite is an experimental feature" warning; it is harmless.
