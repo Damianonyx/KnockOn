@@ -38,6 +38,8 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
+/* Nothing may widen the page on a phone: wide tables scroll inside their own box. */
+html, body { overflow-x: clip; }
 body {
   background: var(--bg);
   color: var(--text);
@@ -289,8 +291,18 @@ table.compare .changes { text-align: left; font-size: 0.78rem; color: var(--text
   .page { padding: 18px 14px 40px; }
   .ws-main { padding: 12px 12px 32px; }
   .metric .m-value { font-size: 1.2rem; }
-  .sheet-host { height: 420px; min-width: 0; }
+  /* Tall enough for every row (through B16), so nothing hides inside the sheet's own scroll. */
+  .sheet-host { height: 480px; min-width: 0; }
+  /* One header row: logo, project name, Save. */
+  .app-header { flex-wrap: nowrap; gap: 10px; }
+  .app-header .brand span { display: none; }
+  .header-crumb { flex: 1; min-width: 0; }
+  .header-crumb strong { min-width: 0; }
+  .header-crumb .badge { font-size: 0.68rem; padding: 2px 6px; }
+  .app-header .spacer { display: none; }
+  .save-btn { min-width: 0; }
 }
+
 
 
 /* ---------- Simplified workspace ---------- */
@@ -313,6 +325,19 @@ table.compare .changes { text-align: left; font-size: 0.78rem; color: var(--text
 }
 @media (prefers-reduced-motion: reduce) { .inspect-drawer { animation: none; } }
 .compare-section .chart-card { max-width: 760px; }
+/* Phones: one card per scenario instead of a wide table. */
+@media (max-width: 560px) {
+  table.compare { min-width: 0; }
+  table.compare thead { display: none; }
+  table.compare, table.compare tbody, table.compare tr { display: block; }
+  table.compare tr { padding: 12px 14px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
+  table.compare tr:last-child { border-bottom: 0; }
+  table.compare th[scope='row'] { grid-column: 1 / -1; padding: 0 !important; border: 0; font-size: 1rem; }
+  table.compare td { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 0; border: 0; text-align: left; }
+  table.compare td[data-label]::before { content: attr(data-label); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); }
+  table.compare td.changes { grid-column: 1 / -1; max-width: none; }
+  table.compare td.changes:empty { display: none; }
+}
 
 /* ---------- Knocky in the app ---------- */
 .hero-knocky { flex-direction: row; align-items: flex-end; gap: 14px; }

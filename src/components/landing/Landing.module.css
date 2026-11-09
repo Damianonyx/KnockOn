@@ -108,7 +108,8 @@
   .stage { transform: scale(0.52); transform-origin: 50% 0; margin: 96px auto -230px; }
 }
 @media (max-width: 360px) {
-  .title { font-size: 40px; }
+  .title { font-size: 36px; }
+  .open h2 { font-size: 30px; }
 }
 
 .title, .howTitle, .open h2 { font-family: var(--font-serif), Georgia, serif; }

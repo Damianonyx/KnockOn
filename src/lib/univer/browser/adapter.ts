@@ -78,7 +78,7 @@ function decorate(workbook: BakeryWorkbook, availableWidth: number): BakeryWorkb
   if (!sheet) return workbook;
   // Fit labels (A) and values (B) to the visible width, so the numbers never sit
   // off-screen on a phone. 46px is the row-number header; 22px leaves room for the scrollbar.
-  const colB = availableWidth && availableWidth < 520 ? 110 : 150;
+  const colB = !availableWidth || availableWidth >= 520 ? 150 : availableWidth < 400 ? 84 : 110;
   const colA = availableWidth ? Math.max(130, Math.min(230, availableWidth - 46 - colB - 22)) : 230;
   sheet.columnData = { ...(sheet.columnData ?? {}), 0: { w: colA }, 1: { w: colB } };
   const cells = sheet.cellData ?? {};

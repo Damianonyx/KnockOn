@@ -83,7 +83,7 @@ export function ComparisonView({
                         const pressed = inspect?.source === 'saved' && inspect.scenarioId === s.id && inspect.key === c.key;
                         const loss = c.key === 'profit' && typeof v === 'number' && v < 0;
                         return (
-                          <td key={c.key} className="num-cell">
+                          <td key={c.key} className="num-cell" data-label={c.label}>
                             <button
                               type="button"
                               aria-pressed={pressed}
@@ -97,7 +97,7 @@ export function ComparisonView({
                           </td>
                         );
                       })}
-                      <td>{s.kind === 'baseline' ? <span className="muted">—</span> : <DeltaText value={changeAgainst(profit, baseProfit)} currency={project.currency} />}</td>
+                      <td data-label="vs baseline">{s.kind === 'baseline' ? <span className="muted">—</span> : <DeltaText value={changeAgainst(profit, baseProfit)} currency={project.currency} />}</td>
                       <td className="changes">
                         {s.kind === 'baseline' && <span>{project.demo ? 'Fictional demo figures' : 'Your figures'}</span>}
                         {changes.map((c) => (

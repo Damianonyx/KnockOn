@@ -3,7 +3,7 @@
  * SVG charts drawn from saved, server-calculated scenario metrics. Scales only
  * position marks; no business figures are computed here.
  */
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { formatMoney } from '@/lib/format';
 
 export interface ChartRow {
@@ -47,15 +47,28 @@ function compact(v: number, currency: string) {
   return formatMoney(v, currency);
 }
 
+const truncate = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
+
 type Tip = { x: number; y: number; title: string; lines: string[] } | null;
 
 export function ResultsBarChart({ rows, currency }: { rows: ChartRow[]; currency: string }) {
   const [tip, setTip] = useState<Tip>(null);
+  // Draw at the real width, so the text stays readable on a phone instead of shrinking with the chart.
+  const box = useRef<HTMLDivElement>(null);
+  const [W, setW] = useState(640);
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const fit = () => setW(Math.max(260, Math.round(el.clientWidth)) || 640);
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const values = rows.flatMap((r) => SERIES.map((s) => r[s.key]).filter((v): v is number => typeof v === 'number'));
   const extent = niceExtent(values);
-  const W = 640;
-  const H = 280;
-  const m = { top: 12, right: 8, bottom: 46, left: 64 };
+  const H = W < 480 ? 230 : 280;
+  const m = { top: 12, right: 8, bottom: 46, left: W < 480 ? 54 : 64 };
   const iw = W - m.left - m.right;
   const ih = H - m.top - m.bottom;
   const y = (v: number) => m.top + ih - ((v - extent[0]) / (extent[1] - extent[0])) * ih;
@@ -74,7 +87,7 @@ export function ResultsBarChart({ rows, currency }: { rows: ChartRow[]; currency
           </span>
         ))}
       </div>
-      <div style={{ position: 'relative' }}>
+      <div ref={box} style={{ position: 'relative' }}>
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Bar chart of revenue, total costs and profit for each scenario. The same figures are in the table above." onMouseLeave={() => setTip(null)}>
         <g className="axis">
           {ticks(extent).map((t) => (
@@ -105,7 +118,7 @@ export function ResultsBarChart({ rows, currency }: { rows: ChartRow[]; currency
                 );
               })}
               <text className="cat-label" x={m.left + gi * group + group / 2} y={H - m.bottom + 18} textAnchor="middle">
-                {r.name.length > 18 ? `${r.name.slice(0, 17)}…` : r.name}
+                {truncate(r.name, Math.max(6, Math.floor(group / 7.5)))}
               </text>
             </g>
           );
