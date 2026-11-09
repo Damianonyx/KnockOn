@@ -12,7 +12,7 @@ import { formatMoney, formatNumber } from '@/lib/format';
 export type ExplainState =
   | { status: 'loading' }
   | { status: 'ready'; explanation: Explanation }
-  | { status: 'error'; message: string; unavailable: boolean };
+  | { status: 'error'; title: string; message: string; retry: boolean };
 
 function Paragraphs({ text }: { text: string }) {
   const blocks = text.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
@@ -88,10 +88,10 @@ export function ExplainPanel({
         {state.status === 'error' && (
           <div className="banner banner-error" role="alert">
             <div className="banner-body">
-              <strong>{state.unavailable ? 'Explanations aren’t available right now.' : 'Ling couldn’t explain this.'}</strong>
+              <strong>{state.title}</strong>
               <span>{state.message}</span>
               <span className="tiny">The spreadsheet and every result still work.</span>
-              {!state.unavailable && (
+              {state.retry && (
                 <div className="banner-actions">
                   <button type="button" className="btn btn-sm" onClick={onRetry}>
                     Try again

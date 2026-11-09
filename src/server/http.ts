@@ -17,6 +17,10 @@ function issuePath(path: readonly PropertyKey[]): string {
 
 /** Read and validate a JSON body. Malformed JSON or shape errors are 400; oversized bodies are 413. */
 export async function readJson<S extends z.ZodType>(request: Request, schema: S): Promise<z.infer<S>> {
+  // Only JSON bodies: a cross-site HTML form cannot send this content type.
+  if (!(request.headers.get('content-type') ?? '').toLowerCase().startsWith('application/json')) {
+    throw new ApiError(415, 'BAD_REQUEST', 'Send the request body as JSON (Content-Type: application/json).');
+  }
   const declared = Number(request.headers.get('content-length') ?? '0');
   if (declared > MAX_REQUEST_BYTES) {
     throw new ApiError(413, 'PAYLOAD_TOO_LARGE', 'The request is too large.');

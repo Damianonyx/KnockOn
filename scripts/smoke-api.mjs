@@ -10,12 +10,19 @@
  */
 const BASE_URL = (process.env.BASE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 
+// Projects belong to the browser that made them (the ko_owner cookie), so keep it like a browser would.
+let ownerCookie = '';
+
 async function call(method, path, body) {
+  const headers = body === undefined ? {} : { 'Content-Type': 'application/json' };
+  if (ownerCookie) headers.Cookie = ownerCookie;
   const response = await fetch(`${BASE_URL}${path}`, {
     method,
-    headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
+    headers,
     body: body === undefined ? undefined : typeof body === 'string' ? body : JSON.stringify(body),
   });
+  const set = response.headers.get('set-cookie')?.match(/ko_owner=[^;]+/);
+  if (set) ownerCookie = set[0];
   const json = await response.json();
   return { status: response.status, json };
 }

@@ -59,7 +59,7 @@ These AI development roles describe how the app will be built. The model used fo
 
 - **Backend foundation: Ling 3.2 Flash.** Server-side Univer recalculation, the project and scenario API, validation and revision conflicts, the original storage, and the Ling explanation service (commits "Add backend: Univer recalculation, SQLite storage, and project API" and "Add Ling 3.2 Flash explanations").
 - **Interface: Claude.** The landing page and Knocky, the projects page, the spreadsheet workspace, scenarios, comparison, inspection, and the Explain panel.
-- **Later backend changes: Claude**, building on Ling's foundation: hosted Postgres storage (Neon on Vercel), the Vercel deployment fixes, and the explanation length handling.
+- **Later backend changes: Claude**, building on Ling's foundation: hosted Postgres storage (Neon on Vercel), the Vercel deployment fixes, the explanation length handling, private projects per visitor, and Explain rate limits.
 - **Inside the app, explanations are written live by Ling 3.2 Flash.**
 
 ## First milestone
@@ -80,12 +80,12 @@ Comparison charts, formula inspection and Ling explanations are now in the inter
 
 Run the app (see [SETUP.md](SETUP.md#run-the-app)) and open http://localhost:3000. The landing page is at `/`: "Meet KnockOn," with Knocky, a halftone domino mascot that gets knocked by a change and sends its effects flying. "Open app" leads to the app itself at `/projects`.
 
-1. **Projects** (`/projects`). Create a project with a name, a currency, and either the fictional demo bakery or blank figures. Saved projects are listed most recently updated first; click one to reopen it.
+1. **Projects** (`/projects`). Create a project with a name, a currency, and either the fictional demo bakery or blank figures. Saved projects are listed most recently updated first; click one to reopen it. Projects are private to the browser that made them; there are no accounts (see [Privacy and limits](SETUP.md#privacy-and-limits)).
 2. **Workspace.** The bakery model is a real Univer spreadsheet. Edit the eight blue input cells (B2:B9) in the sheet or with the input controls beside it: both change the same workbook cells. Labels and the formulas in B11:B16 are fixed. Metric cards show revenue, total costs, profit, and margin as Univer calculates them; margin shows N/A when revenue is zero, and a loss is labelled as a loss. The Save button is also the save status (Save, Saving…, Saved, Retry save); Ctrl+S saves.
 3. **Scenarios.** Save the baseline, then add a shock (energy or fuel cost increase, supplier price increase, or sales decline). The first shock freezes the baseline so every comparison keeps the same starting point. From a shock, add responses: a price change, where you enter the monthly sales you expect at the new price, or a supplier switch with a new ingredient cost and a delivery cost. KnockOn never estimates how customers react to a price.
 4. **Compare.** Below the spreadsheet, a table and a chart show the saved, server-calculated results for every scenario, including profit change against the baseline and what changed in each scenario.
 5. **Inspect.** Click any result, whether a metric card, a figure in the comparison table, or a result cell in the sheet, to see its formula and the inputs behind it.
-6. **Explain.** On a saved scenario, tap ✦ Explain and Ling 3.2 Flash describes why the numbers look the way they do, naming the cells, the inputs that changed, and the assumptions behind them. It explains; it never recalculates or decides for you.
+6. **Explain.** On a saved scenario, tap ✦ Explain and Ling 3.2 Flash describes why the numbers look the way they do, naming the cells, the inputs that changed, and the assumptions behind them. It explains; it never recalculates or decides for you. Explain is rate limited so the AI bill stays bounded.
 
 Demo figures are always labelled as fictional. If the project changes elsewhere while you edit (for example in another tab), KnockOn keeps your draft and lets you apply it to the latest version or reload.
 

@@ -280,8 +280,18 @@ async function waitSaved(page) {
   await page.unroute('**/explanation');
   await page.keyboard.press('Escape');
 
+  // 13c. Privacy: a different browser sees none of these projects.
+  const strangerCtx = await browser.newContext();
+  const strangerList = await strangerCtx.request.get(new URL('/api/projects', url).toString());
+  const strangerProject = await strangerCtx.request.get(new URL(`/api/projects/${url.split('/projects/')[1]}`, url).toString());
+  check('another browser sees no projects', (await strangerList.json()).data.length === 0 && strangerProject.status() === 404, String(strangerProject.status()));
+  await strangerCtx.close();
+
   // 14. Phone layout
-  const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  // Same visitor on a phone: projects are private to the browser's ko_owner cookie.
+  const phoneCtx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await phoneCtx.addCookies(await ctx.cookies());
+  const phone = await phoneCtx.newPage();
   await phone.goto(url);
   await ready(phone);
   await shot(phone, 'phone', { fullPage: false });

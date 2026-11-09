@@ -12,7 +12,7 @@ import { ProjectService } from '@/server/projects';
 const close = (a: number | null | undefined, b: number) => assert.ok(a != null && Math.abs(a - b) < 1e-9, `${a} ≈ ${b}`);
 
 async function service() {
-  return new ProjectService(await openDatabase(':memory:'));
+  return new ProjectService(await openDatabase(':memory:'), 'owner-a');
 }
 
 function scenario(project: Project, name: string): Scenario {
@@ -130,10 +130,10 @@ describe('bakery workflow', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'knockon-'));
     const file = path.join(dir, 'pglite');
     const db = await openDatabase(file);
-    const p = await bakeryWorkflow(new ProjectService(db));
+    const p = await bakeryWorkflow(new ProjectService(db, 'owner-a'));
     await db.close();
     const reopenedDb = await openDatabase(file);
-    const reopened = new ProjectService(reopenedDb);
+    const reopened = new ProjectService(reopenedDb, 'owner-a');
     const again = await reopened.getProject(p.id);
     assert.deepEqual(again, p);
     assert.equal((await reopened.listProjects())[0].id, p.id);
@@ -295,5 +295,25 @@ describe('rules', () => {
     const updated = await svc.updateScenario(p.id, baseline.id, { expectedRevision: 1, name: 'Baseline', notes: '', workbook: editWorkbook(baseline, { monthlyWages: 5000, monthlyDelivery: 0 }), assumptions: [] });
     close(updated.scenarios[0].calculation.metrics.profit, -3100);
     close(updated.scenarios[0].calculation.metrics.marginFraction, -0.62);
+  });
+});
+
+describe('privacy between visitors', () => {
+  it('keeps each visitor’s projects to themselves', async () => {
+    const db = await openDatabase(':memory:');
+    const alice = new ProjectService(db, 'owner-alice');
+    const bob = new ProjectService(db, 'owner-bob');
+    const p = await alice.createProject({ name: 'Alice Bakery', currency: 'GBP', templateId: 'bakery-v1', initialData: 'demo' });
+    assert.equal((await alice.listProjects()).length, 1);
+    assert.deepEqual(await bob.listProjects(), []);
+    await expectApiError(bob.getProject(p.id), 404, 'NOT_FOUND');
+    await expectApiError(bob.forkScenario(p.id, { expectedRevision: p.revision, sourceScenarioId: p.baselineScenarioId, kind: 'shock', name: 'X' }), 404, 'NOT_FOUND');
+    const base = p.scenarios[0];
+    await expectApiError(
+      bob.updateScenario(p.id, base.id, { expectedRevision: p.revision, name: base.name, notes: '', workbook: base.workbook, assumptions: base.assumptions }),
+      404,
+      'NOT_FOUND',
+    );
+    assert.equal((await alice.getProject(p.id)).revision, p.revision);
   });
 });

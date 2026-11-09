@@ -76,13 +76,15 @@ function toScenario(row: Row): ScenarioRecord {
   };
 }
 
-export async function listProjects(db: Sql): Promise<ProjectRecord[]> {
-  const { rows } = await db.query<Row>('SELECT * FROM projects ORDER BY updated_at DESC, created_at DESC');
+/** Only the visitor's own projects. Projects without an owner (created before ownership existed) are never listed. */
+export async function listProjects(db: Sql, ownerHash: string): Promise<ProjectRecord[]> {
+  const { rows } = await db.query<Row>('SELECT * FROM projects WHERE owner_hash = $1 ORDER BY updated_at DESC, created_at DESC', [ownerHash]);
   return rows.map(toProject);
 }
 
-export async function findProject(db: Sql, id: string): Promise<ProjectRecord | null> {
-  const { rows } = await db.query<Row>('SELECT * FROM projects WHERE id = $1', [id]);
+/** A project, only if it belongs to this visitor; anyone else gets null (reported as "not found"). */
+export async function findProject(db: Sql, id: string, ownerHash: string): Promise<ProjectRecord | null> {
+  const { rows } = await db.query<Row>('SELECT * FROM projects WHERE id = $1 AND owner_hash = $2', [id, ownerHash]);
   return rows[0] ? toProject(rows[0]) : null;
 }
 
@@ -96,12 +98,12 @@ export async function findScenario(db: Sql, projectId: string, scenarioId: strin
   return rows[0] ? toScenario(rows[0]) : null;
 }
 
-export async function insertProject(db: Sql, p: ProjectRecord): Promise<void> {
+export async function insertProject(db: Sql, p: ProjectRecord, ownerHash: string): Promise<void> {
   await db.query(
     `INSERT INTO projects (id, name, currency, template_id, template_version, schema_version, revision,
-       baseline_scenario_id, baseline_frozen, demo, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-    [p.id, p.name, p.currency, p.templateId, p.templateVersion, p.schemaVersion, p.revision, p.baselineScenarioId, p.baselineFrozen, p.demo, p.createdAt, p.updatedAt],
+       baseline_scenario_id, baseline_frozen, demo, created_at, updated_at, owner_hash)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+    [p.id, p.name, p.currency, p.templateId, p.templateVersion, p.schemaVersion, p.revision, p.baselineScenarioId, p.baselineFrozen, p.demo, p.createdAt, p.updatedAt, ownerHash],
   );
 }
 

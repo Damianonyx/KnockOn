@@ -1,6 +1,7 @@
 import { explanationRequestSchema } from '@/lib/contracts/project';
 import { explanationService } from '@/server/explanations';
-import { handle, ok, readJson } from '@/server/http';
+import { ok, readJson } from '@/server/http';
+import { withVisitor } from '@/server/visitor';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -11,9 +12,9 @@ export const dynamic = 'force-dynamic';
  * project revision it describes; any later save makes it stale.
  */
 export async function POST(request: Request, context: { params: Promise<{ projectId: string; scenarioId: string }> }) {
-  return handle(async () => {
+  return withVisitor(request, async (visitor) => {
     const { projectId, scenarioId } = await context.params;
     const body = await readJson(request, explanationRequestSchema);
-    return ok(await (await explanationService()).explain(projectId, scenarioId, body));
+    return ok(await (await explanationService(visitor)).explain(projectId, scenarioId, body));
   });
 }
