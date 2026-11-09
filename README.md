@@ -10,8 +10,6 @@ The name comes from a knock-on effect: one change causes consequences elsewhere.
 
 **Live:** [knockon.tech](https://www.knockon.tech)
 
-> **Status: MVP complete.** The bakery template works end to end, from entering figures to saving, comparing and explaining scenarios, on desktop and phone. More templates are next.
-
 ## What you can do
 
 1. **Start a project** at `/projects`. Choose a name, a currency, and either the fictional demo bakery or blank figures. Projects are private to your browser; there are no accounts.
@@ -62,15 +60,6 @@ Without a database URL, the app stores data in an embedded Postgres in `./data/p
 | `npm run e2e` | The whole interface in a real browser, including a phone layout |
 
 Full configuration and the Vercel deployment steps are in [SETUP.md](SETUP.md).
-
-## Who built what
-
-| Tool | Role |
-| --- | --- |
-| **AntLing's Ling 3.2 Flash** | Built the backend foundation: server-side Univer recalculation, the project and scenario API, validation and revision conflicts, the original storage, and the explanation service (commits "Add backend: Univer recalculation, SQLite storage, and project API" and "Add Ling 3.2 Flash explanations"). Inside the app, Ling 3.2 Flash writes every explanation live. |
-| **Claude** | Built the interface: the landing page and Knocky, the projects page, the spreadsheet workspace, scenarios, comparison, inspection, the Explain panel and the phone layout. Also made the later backend changes on Ling's foundation: hosted Postgres (Neon on Vercel), the Vercel deployment fixes, explanation length handling, private projects per visitor and Explain rate limits. |
-| **ChatGPT / Codex** | Brainstorming, product planning, specifications and content preparation. |
-| **Univer SDK** | Spreadsheet editing and calculation inside the app. |
 
 ## Build documents
 
