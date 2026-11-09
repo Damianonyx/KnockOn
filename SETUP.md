@@ -12,11 +12,11 @@ For a fresh checkout, copy `.env.example` to `.env` and enter your Univer licens
 
 AntLing's [official API model listing](https://developer.ant-ling.com/en/docs/faq/), checked on November 6, 2026, confirms `Ling-3.2-flash`. Both `.env` and `.env.example` use that exact, case-sensitive ID. Access with your account still needs a live API check after you add the key.
 
-The backend is implemented: server-side Univer calculation, local storage, the project API, and Ling explanations. The browser spreadsheet editor and the MVP interface are implemented as well (projects, workspace, scenarios, comparison, and inspection); the explanation interface comes later. Next.js loads `.env` automatically; restart the app after editing it. Hosted deployments need the same values entered in their environment settings.
+The backend is implemented: server-side Univer calculation, Postgres storage, the project API, and Ling explanations. The browser spreadsheet editor and the MVP interface are implemented as well (projects, workspace, scenarios, comparison, inspection, and Ling explanations). Next.js loads `.env` automatically; restart the app after editing it. Hosted deployments need the same values entered in their environment settings.
 
 ## Run the app
 
-Requires Node.js 22.13 or later (for the built-in `node:sqlite` module).
+Requires Node.js 22.13 or later.
 
 ```bash
 npm ci                 # install the exact locked dependencies
@@ -32,7 +32,12 @@ npm run dev            # http://localhost:3000, API under /api
 | `npm run e2e` | With the app running, drives the full bakery workflow in a real browser (Playwright + Chromium): create, edit in the sheet and controls, save, shock, price and supplier responses, frozen baseline, inspect, compare, reload, plus validation, zero revenue, a loss, network failure, a save conflict, and phone layout. Set `BASE_URL` for another port, `E2E_SCREENSHOTS=1` to save screenshots to `verify-results/`, `E2E_HEADED=1` to watch. It creates a demo project in your database. On a fresh machine, run `npx playwright install chromium` once first. |
 | `npm run smoke:api` | With the app running, runs the full bakery workflow over HTTP. Set `BASE_URL` for a port other than 3000. It creates a demo project in your database. |
 
-Projects are stored in the SQLite file at `KNOCKON_DATABASE_PATH` (default `./data/knockon.db`), created on first run and excluded from Git. Delete that file to start over. Node may print an "SQLite is an experimental feature" warning; it is harmless.
+Projects are stored in Postgres:
+
+- **Hosted:** set `DATABASE_URL` to a Postgres connection string. On Vercel, connecting a Neon database (below) sets it for you.
+- **Local runs and tests:** without `DATABASE_URL`, an embedded Postgres (PGlite) keeps data in `KNOCKON_DATABASE_PATH` (default `./data/pglite`), created on first run and excluded from Git. Delete that folder to start over.
+
+The schema is created and upgraded automatically on first use (`schema_migrations` records the version). Every save and its revision check run in one transaction, so two simultaneous saves can never both win.
 
 ### Interface
 
@@ -56,11 +61,25 @@ Interface code lives in `src/components/` (`landing/`, `projects/`, `workspace/`
 
 All endpoints are described in [docs/API_CONTRACT.md](docs/API_CONTRACT.md): templates, projects, scenario forks and saves, and explanations. The server recalculates every saved workbook with Univer and ignores calculated values sent by the browser.
 
-Explanations call Ling 3.2 Flash from the server at `POST /api/projects/:projectId/scenarios/:scenarioId/explanation`. Without `ANTLING_API_KEY` that route returns 503 and everything else keeps working. Each explanation uses API credits.
+Explanations call Ling 3.2 Flash from the server at `POST /api/projects/:projectId/scenarios/:scenarioId/explanation`. In the app, the ✦ Explain button on a saved scenario opens the explanation in a slide-in panel; it is marked out of date after any later save, and is only fetched when someone taps Explain. Without `ANTLING_API_KEY` that route returns 503, the panel says explanations aren't available, and everything else keeps working. Each explanation uses API credits.
 
 ## Interface principles
 
 Two rules guide the interface: cut settings pages, filter bars and mode switches (pick the right default and hide the rest), and never solve a design problem by adding more UI or a code problem by adding another layer. Remove parts until the right action is the only obvious one.
+
+## Deploy on Vercel
+
+Everything can be done from the Vercel dashboard, including on a phone:
+
+1. **Import** the GitHub repository as a Vercel project (framework: Next.js, no settings to change).
+2. **Database:** in the project, open **Storage**, choose **Create Database → Neon (Postgres)**, and connect it to this project for all environments. Vercel adds `DATABASE_URL` automatically. Tables are created on the first request.
+3. **Environment variables** (Settings → Environment Variables), for Production and Preview:
+   - `UNIVER_LICENSE`: the contents of `license.txt`.
+   - `ANTLING_API_KEY`: your AntLing key (keep it here only; never in code).
+   - Optional: `ANTLING_BASE_URL` and `ANTLING_MODEL` (defaults: `https://api.ant-ling.com/v1`, `Ling-3.2-flash`), and `SITE_URL` if the site is not at `https://www.knockon.tech`.
+4. **Redeploy** so the new variables take effect.
+
+If the database is missing, the app says so ("no database is connected") instead of losing projects. If the AntLing key is missing or wrong, Explain says explanations aren't available and the rest of the app keeps working.
 
 ## Univer
 

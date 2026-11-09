@@ -17,6 +17,7 @@
     "e2e": "node scripts/e2e.mjs"
   },
   "dependencies": {
+    "@electric-sql/pglite": "0.5.15",
     "@univerjs-pro/license": "1.4.0",
     "@univerjs/core": "1.4.0",
     "@univerjs/design": "1.4.0",
@@ -32,6 +33,7 @@
     "@univerjs/themes": "1.4.0",
     "@univerjs/ui": "1.4.0",
     "next": "16.4.5",
+    "pg": "8.23.1",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "rxjs": "^7.8.2",
@@ -39,6 +41,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "playwright": "1.63.0",

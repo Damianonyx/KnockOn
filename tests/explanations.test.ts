@@ -9,7 +9,7 @@ import { ProjectService } from '@/server/projects';
 const CONFIG = { apiKey: 'test-key', baseUrl: 'https://ling.example/v1', model: 'Ling-3.2-flash' };
 
 async function shockProject() {
-  const db = openDatabase(':memory:');
+  const db = await openDatabase(':memory:');
   const projects = new ProjectService(db);
   let p = await projects.createProject({ name: 'Corner Bakery', currency: 'GBP', templateId: 'bakery-v1', initialData: 'demo' });
   p = await projects.forkScenario(p.id, { expectedRevision: 1, sourceScenarioId: p.baselineScenarioId, kind: 'shock', name: 'Energy shock' });
@@ -80,5 +80,7 @@ describe('Ling explanations', () => {
     await expectApiError(run({ status: 500 }), 502, 'EXPLANATION_FAILED');
     await expectApiError(run({ body: { choices: [{ message: { content: '' } }] } }), 502, 'EXPLANATION_FAILED');
     await expectApiError(run({ error: Object.assign(new Error('t'), { name: 'TimeoutError' }) }), 504, 'EXPLANATION_FAILED');
+    // A reply cut off by the length limit is never shown as if it were complete.
+    await expectApiError(run({ body: { choices: [{ message: { content: 'Profit is £825. Revenue is £5,22' }, finish_reason: 'length' }] } }), 502, 'EXPLANATION_FAILED');
   });
 });

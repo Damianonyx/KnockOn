@@ -39,8 +39,8 @@ async function ready(page) {
 }
 async function cellPoint(page, row, col) {
   const box = await page.locator('.sheet-host').boundingBox();
-  // Row header 46px wide; formula bar + column header ~ 50px; rows 24px; col A 230, col B 120.
-  const x = box.x + 46 + (col === 0 ? 115 : 230 + 60);
+  // Row header 46px wide; formula bar + column header ~ 50px; rows 24px; col A 230, col B 150.
+  const x = box.x + 46 + (col === 0 ? 115 : 230 + 75);
   const y = box.y + 62 + (row - 1) * 24;
   return { x, y };
 }
@@ -258,6 +258,27 @@ async function waitSaved(page) {
   await page.waitForTimeout(1500);
   m = await metrics(page);
   check('discard restores saved', m.includes('£600'), m);
+
+  // 13b. Ling explanations (mocked here so the test never spends API credit)
+  await page.goto(url);
+  await page.locator('.scenario-item', { hasText: 'Price £5.50' }).click();
+  await ready(page);
+  await page.route('**/explanation', (route) => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ data: { projectId: 'x', scenarioId: 'x', projectRevision: 0, model: 'Ling-3.2-flash', explanation: 'Profit is £825 (B15 = B11 - B14).\n\nPrice rose from £5 to £5.50.', generatedAt: new Date().toISOString(), changedInputs: [{ inputKey: 'unitPrice', label: 'Price per unit', cell: 'B3', from: 5, to: 5.5 }] } }),
+  }));
+  await page.getByRole('button', { name: '✦ Explain' }).click();
+  await page.waitForSelector('.explain-text');
+  check('explanation shown', (await page.locator('.explain-text').innerText()).includes('Profit is £825'));
+  check('explanation marked out of date when the project changed', await page.getByText('The project changed since this explanation.').isVisible());
+  await page.unroute('**/explanation');
+  await page.route('**/explanation', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: { code: 'EXPLANATION_UNAVAILABLE', message: 'Explanations are not set up yet.' } }) }));
+  await page.getByRole('button', { name: 'Explain again' }).click();
+  await page.waitForTimeout(500);
+  check('explanation unavailable handled', await page.getByText('Explanations aren’t available right now.').isVisible());
+  await shot(page, 'explain');
+  await page.unroute('**/explanation');
+  await page.keyboard.press('Escape');
 
   // 14. Phone layout
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });

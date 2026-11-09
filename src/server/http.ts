@@ -53,7 +53,7 @@ export async function handle(work: () => Promise<NextResponse> | NextResponse): 
     }
     // Log the error type and message only: never request bodies, keys, or licenses.
     const detail = error instanceof Error ? `${error.name}: ${error.message}` : 'Unknown error';
-    console.error(`[knock-on] Unexpected API error: ${detail}`);
+    console.error(`[knockon] Unexpected API error: ${detail}`);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Something went wrong on the server. Your draft has not been saved; try again.' } },
       { status: 500, headers: { 'Cache-Control': 'no-store' } },

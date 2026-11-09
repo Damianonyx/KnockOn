@@ -7,7 +7,6 @@
  * - A price change needs an explicitly confirmed sales-volume assumption.
  */
 import { randomUUID } from 'node:crypto';
-import type { DatabaseSync } from 'node:sqlite';
 import type {
   Assumption,
   Calculation,
@@ -30,7 +29,7 @@ import {
 import type { BakeryProjection } from '@/lib/univer/calculate';
 import { readBakeryInput, type BakeryWorkbook } from '@/lib/univer/snapshot';
 import { recalculateWorkbook, WorkbookValidationError } from '@/lib/univer/server/recalculate';
-import { getDatabase, transaction } from './db';
+import { getDatabase, type Sql } from './db';
 import { ApiError, notFound, revisionConflict } from './errors';
 import * as repo from './repository';
 
@@ -156,16 +155,16 @@ function normaliseAssumptions(
 }
 
 export class ProjectService {
-  constructor(private readonly db: DatabaseSync) {}
+  constructor(private readonly db: Sql) {}
 
-  listProjects(): ProjectSummary[] {
-    return repo.listProjects(this.db).map(toSummary);
+  async listProjects(): Promise<ProjectSummary[]> {
+    return (await repo.listProjects(this.db)).map(toSummary);
   }
 
-  getProject(projectId: string): Project {
-    const project = repo.findProject(this.db, projectId);
+  async getProject(projectId: string): Promise<Project> {
+    const project = await repo.findProject(this.db, projectId);
     if (!project) throw notFound('Project');
-    const scenarios = repo.listScenarios(this.db, projectId).map(toScenario);
+    const scenarios = (await repo.listScenarios(this.db, projectId)).map(toScenario);
     return {
       ...toSummary(project),
       schemaVersion: project.schemaVersion,
@@ -189,8 +188,8 @@ export class ProjectService {
     const timestamp = now();
     const projectId = newId('proj');
     const baselineId = newId('scn');
-    transaction(this.db, () => {
-      repo.insertProject(this.db, {
+    await this.db.transaction(async (tx) => {
+      await repo.insertProject(tx, {
         id: projectId,
         name: request.name,
         currency: request.currency,
@@ -204,7 +203,7 @@ export class ProjectService {
         createdAt: timestamp,
         updatedAt: timestamp,
       });
-      repo.insertScenario(this.db, {
+      await repo.insertScenario(tx, {
         id: baselineId,
         projectId,
         position: 0,
@@ -223,11 +222,11 @@ export class ProjectService {
   }
 
   async forkScenario(projectId: string, request: ForkScenarioRequest): Promise<Project> {
-    const project = repo.findProject(this.db, projectId);
+    const project = await repo.findProject(this.db, projectId);
     if (!project) throw notFound('Project');
     if (project.revision !== request.expectedRevision) throw revisionConflict(project.revision);
 
-    const source = repo.findScenario(this.db, projectId, request.sourceScenarioId);
+    const source = await repo.findScenario(this.db, projectId, request.sourceScenarioId);
     if (!source) throw notFound('Source scenario');
     if (request.kind === 'shock' && source.kind !== 'baseline') {
       throw new ApiError(422, 'INVALID_FORK', 'A shock must be created from the baseline.', {
@@ -246,15 +245,15 @@ export class ProjectService {
     const { workbook, calculation } = await calculateOrReject(copy);
 
     const timestamp = now();
-    transaction(this.db, () => {
+    await this.db.transaction(async (tx) => {
       const freezeBaseline = request.kind === 'shock';
-      if (!repo.bumpRevision(this.db, projectId, request.expectedRevision, timestamp, { freezeBaseline })) {
-        throw revisionConflict(repo.findProject(this.db, projectId)?.revision ?? project.revision);
+      if (!(await repo.bumpRevision(tx, projectId, request.expectedRevision, timestamp, { freezeBaseline }))) {
+        throw revisionConflict((await repo.findProject(tx, projectId))?.revision ?? project.revision);
       }
-      repo.insertScenario(this.db, {
+      await repo.insertScenario(tx, {
         id: newId('scn'),
         projectId,
-        position: repo.nextScenarioPosition(this.db, projectId),
+        position: await repo.nextScenarioPosition(tx, projectId),
         name: request.name,
         kind: request.kind,
         parentScenarioId: source.id,
@@ -270,9 +269,9 @@ export class ProjectService {
   }
 
   async updateScenario(projectId: string, scenarioId: string, request: UpdateScenarioRequest): Promise<Project> {
-    const project = repo.findProject(this.db, projectId);
+    const project = await repo.findProject(this.db, projectId);
     if (!project) throw notFound('Project');
-    const scenario = repo.findScenario(this.db, projectId, scenarioId);
+    const scenario = await repo.findScenario(this.db, projectId, scenarioId);
     if (!scenario) throw notFound('Scenario');
     if (project.revision !== request.expectedRevision) throw revisionConflict(project.revision);
     if (scenario.kind === 'baseline' && project.baselineFrozen) {
@@ -289,15 +288,15 @@ export class ProjectService {
     }
 
     const { workbook, calculation } = await calculateOrReject(request.workbook);
-    const parent = scenario.parentScenarioId ? repo.findScenario(this.db, projectId, scenario.parentScenarioId) : null;
+    const parent = scenario.parentScenarioId ? await repo.findScenario(this.db, projectId, scenario.parentScenarioId) : null;
     const assumptions = normaliseAssumptions(request.assumptions, workbook, parent, project);
 
     const timestamp = now();
-    transaction(this.db, () => {
-      if (!repo.bumpRevision(this.db, projectId, request.expectedRevision, timestamp)) {
-        throw revisionConflict(repo.findProject(this.db, projectId)?.revision ?? project.revision);
+    await this.db.transaction(async (tx) => {
+      if (!(await repo.bumpRevision(tx, projectId, request.expectedRevision, timestamp))) {
+        throw revisionConflict((await repo.findProject(tx, projectId))?.revision ?? project.revision);
       }
-      repo.updateScenarioContent(this.db, {
+      await repo.updateScenarioContent(tx, {
         id: scenarioId,
         projectId,
         name: request.name,
@@ -312,8 +311,8 @@ export class ProjectService {
   }
 }
 
-export function projectService(): ProjectService {
-  return new ProjectService(getDatabase());
+export async function projectService(): Promise<ProjectService> {
+  return new ProjectService(await getDatabase());
 }
 
 /** Input labels by key, for messages and explanations. */

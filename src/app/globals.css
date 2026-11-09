@@ -319,3 +319,10 @@ table.compare .changes { text-align: left; font-size: 0.78rem; color: var(--text
 .hero-knocky { flex-direction: row; align-items: flex-end; gap: 14px; }
 .dialog-head-art { flex-direction: row; align-items: center; gap: 14px; }
 .banner > img { align-self: center; }
+
+/* ---------- Ling explanations ---------- */
+.explain-btn { border-color: #b8d0d4; background: #eef5f6; color: var(--brand); }
+.explain-btn:hover:not(:disabled) { background: #e1eef0; }
+.explain-text { display: flex; flex-direction: column; gap: 10px; font-size: 0.92rem; line-height: 1.55; }
+.explain-text p { margin: 0; white-space: pre-line; }
+.explain-text ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }

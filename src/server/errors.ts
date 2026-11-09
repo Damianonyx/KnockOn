@@ -16,6 +16,7 @@ export type ApiErrorCode =
   | 'CALCULATION_ERROR'
   | 'EXPLANATION_UNAVAILABLE'
   | 'EXPLANATION_FAILED'
+  | 'DATABASE_NOT_CONFIGURED'
   | 'INTERNAL_ERROR';
 
 export interface ApiErrorDetails {

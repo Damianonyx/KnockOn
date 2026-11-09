@@ -76,7 +76,7 @@ function decorate(workbook: BakeryWorkbook): BakeryWorkbook {
     columnData?: Record<string, { w?: number }>;
   }) | undefined;
   if (!sheet) return workbook;
-  sheet.columnData = { ...(sheet.columnData ?? {}), 0: { w: 230 }, 1: { w: 120 } };
+  sheet.columnData = { ...(sheet.columnData ?? {}), 0: { w: 230 }, 1: { w: 150 } };
   const cells = sheet.cellData ?? {};
   for (const m of BAKERY_INPUTS) {
     const cell = cells[m.row]?.[m.col];

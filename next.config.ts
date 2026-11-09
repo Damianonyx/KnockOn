@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
     '@univerjs/engine-formula',
     '@univerjs/sheets',
     '@univerjs/sheets-formula',
+    // Database drivers: node-postgres for hosted Postgres, PGlite (WebAssembly) locally.
+    'pg',
+    '@electric-sql/pglite',
   ],
   typescript: { ignoreBuildErrors: false },
   // Do not write an AGENTS.md into the repository when the dev server starts.

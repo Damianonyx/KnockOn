@@ -10,6 +10,6 @@ export async function PUT(request: Request, context: { params: Promise<{ project
   return handle(async () => {
     const { projectId, scenarioId } = await context.params;
     const body = await readJson(request, updateScenarioRequestSchema);
-    return ok(await projectService().updateScenario(projectId, scenarioId, body));
+    return ok(await (await projectService()).updateScenario(projectId, scenarioId, body));
   });
 }

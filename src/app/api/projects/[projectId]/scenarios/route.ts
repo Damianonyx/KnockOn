@@ -10,6 +10,6 @@ export async function POST(request: Request, context: { params: Promise<{ projec
   return handle(async () => {
     const { projectId } = await context.params;
     const body = await readJson(request, forkScenarioRequestSchema);
-    return ok(await projectService().forkScenario(projectId, body), 201);
+    return ok(await (await projectService()).forkScenario(projectId, body), 201);
   });
 }

@@ -11,8 +11,8 @@ import { ProjectService } from '@/server/projects';
 
 const close = (a: number | null | undefined, b: number) => assert.ok(a != null && Math.abs(a - b) < 1e-9, `${a} ≈ ${b}`);
 
-function service() {
-  return new ProjectService(openDatabase(':memory:'));
+async function service() {
+  return new ProjectService(await openDatabase(':memory:'));
 }
 
 function scenario(project: Project, name: string): Scenario {
@@ -84,7 +84,7 @@ async function bakeryWorkflow(svc: ProjectService) {
 
 describe('bakery workflow', () => {
   it('matches the API contract fixtures', async () => {
-    const p = await bakeryWorkflow(service());
+    const p = await bakeryWorkflow(await service());
     const expected: Record<string, [number, number, number]> = {
       Baseline: [5000, 4300, 700],
       'Energy shock': [5000, 4500, 500],
@@ -108,7 +108,7 @@ describe('bakery workflow', () => {
   });
 
   it('keeps formulas in saved workbooks and gives each scenario its own workbook id', async () => {
-    const p = await bakeryWorkflow(service());
+    const p = await bakeryWorkflow(await service());
     const ids = new Set(p.scenarios.map((s) => s.workbook.id));
     assert.equal(ids.size, p.scenarios.length);
     for (const s of p.scenarios) {
@@ -119,7 +119,7 @@ describe('bakery workflow', () => {
   });
 
   it('forks without changing the source scenario', async () => {
-    const svc = service();
+    const svc = await service();
     const p = await bakeryWorkflow(svc);
     close(scenario(p, 'Energy shock').calculation.inputs.unitPrice, 5);
     close(scenario(p, 'Energy shock').calculation.inputs.monthlyEnergy, 600);
@@ -128,20 +128,22 @@ describe('bakery workflow', () => {
 
   it('survives reopening the database file', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'knockon-'));
-    const file = path.join(dir, 'test.db');
-    const db = openDatabase(file);
+    const file = path.join(dir, 'pglite');
+    const db = await openDatabase(file);
     const p = await bakeryWorkflow(new ProjectService(db));
-    db.close();
-    const reopened = new ProjectService(openDatabase(file));
-    const again = reopened.getProject(p.id);
+    await db.close();
+    const reopenedDb = await openDatabase(file);
+    const reopened = new ProjectService(reopenedDb);
+    const again = await reopened.getProject(p.id);
     assert.deepEqual(again, p);
-    assert.equal(reopened.listProjects()[0].id, p.id);
+    assert.equal((await reopened.listProjects())[0].id, p.id);
+    await reopenedDb.close();
   });
 });
 
 describe('project creation', () => {
   it('starts a blank project at zero with no inferred assumptions and a null margin', async () => {
-    const p = await service().createProject({ name: 'Mine', currency: 'USD', templateId: 'bakery-v1', initialData: 'blank' });
+    const p = await (await service()).createProject({ name: 'Mine', currency: 'USD', templateId: 'bakery-v1', initialData: 'blank' });
     const baseline = p.scenarios[0];
     assert.equal(p.currency, 'USD');
     assert.equal(p.demo, false);
@@ -151,20 +153,20 @@ describe('project creation', () => {
   });
 
   it('labels demo figures as demo data', async () => {
-    const p = await service().createProject({ name: 'Demo', currency: 'EUR', templateId: 'bakery-v1', initialData: 'demo' });
+    const p = await (await service()).createProject({ name: 'Demo', currency: 'EUR', templateId: 'bakery-v1', initialData: 'demo' });
     assert.equal(p.demo, true);
     assert.equal(p.scenarios[0].assumptions.length, 8);
     assert.ok(p.scenarios[0].assumptions.every((a) => a.source === 'demo'));
   });
 
   it('rejects an unknown template with 404', async () => {
-    await expectApiError(service().createProject({ name: 'X', currency: 'EUR', templateId: 'nope', initialData: 'demo' }), 404, 'NOT_FOUND');
+    await expectApiError((await service()).createProject({ name: 'X', currency: 'EUR', templateId: 'nope', initialData: 'demo' }), 404, 'NOT_FOUND');
   });
 });
 
 describe('rules', () => {
   async function demoProject() {
-    const svc = service();
+    const svc = await service();
     const p = await svc.createProject({ name: 'Demo', currency: 'EUR', templateId: 'bakery-v1', initialData: 'demo' });
     return { svc, p };
   }
@@ -267,7 +269,7 @@ describe('rules', () => {
     assert.ok(error.details.fields?.['workbook.B2']);
     assert.ok(error.details.fields?.['workbook.B5']);
     assert.ok(error.details.fields?.['workbook.B6']);
-    assert.deepEqual(svc.getProject(p.id), p);
+    assert.deepEqual(await svc.getProject(p.id), p);
   });
 
   it('ignores calculated values sent by the client', async () => {

@@ -9,10 +9,9 @@
  * KnockOn route, never AntLing directly. The spreadsheet keeps working when
  * Ling is unavailable.
  */
-import type { DatabaseSync } from 'node:sqlite';
 import type { Explanation, ExplanationRequest } from '@/lib/contracts/project';
 import { BAKERY_INPUTS, BAKERY_RESULTS, BAKERY_SIMPLIFICATIONS } from '@/lib/templates/bakery';
-import { getDatabase } from './db';
+import { getDatabase, type Sql } from './db';
 import { ApiError, notFound, revisionConflict } from './errors';
 import * as repo from './repository';
 
@@ -124,23 +123,23 @@ function stripReasoning(text: string): string {
 
 export class ExplanationService {
   constructor(
-    private readonly db: DatabaseSync,
+    private readonly db: Sql,
     private readonly config: LingConfig | null,
     private readonly fetchImpl: typeof fetch = fetch,
   ) {}
 
   async explain(projectId: string, scenarioId: string, request: ExplanationRequest): Promise<Explanation> {
-    const project = repo.findProject(this.db, projectId);
+    const project = await repo.findProject(this.db, projectId);
     if (!project) throw notFound('Project');
-    const scenario = repo.findScenario(this.db, projectId, scenarioId);
+    const scenario = await repo.findScenario(this.db, projectId, scenarioId);
     if (!scenario) throw notFound('Scenario');
     if (project.revision !== request.expectedRevision) throw revisionConflict(project.revision);
     if (!this.config) {
       throw new ApiError(503, 'EXPLANATION_UNAVAILABLE', 'Explanations are not set up yet. Add ANTLING_API_KEY to the server environment.');
     }
 
-    const parent = scenario.parentScenarioId ? repo.findScenario(this.db, projectId, scenario.parentScenarioId) : null;
-    const baseline = repo.findScenario(this.db, projectId, project.baselineScenarioId);
+    const parent = scenario.parentScenarioId ? await repo.findScenario(this.db, projectId, scenario.parentScenarioId) : null;
+    const baseline = await repo.findScenario(this.db, projectId, project.baselineScenarioId);
     const context = buildExplanationContext(project, scenario, parent, baseline);
     const question = request.question?.trim() || 'Explain these results and what drives them.';
 
@@ -157,13 +156,14 @@ export class ExplanationService {
             { role: 'system', content: SYSTEM_PROMPT },
             { role: 'user', content: `${context}\n\nQuestion: ${question}` },
           ],
-          max_tokens: 2048,
+          // Ling may think before it answers; leave room so the answer is never cut short.
+          max_tokens: 8192,
           temperature: 0.3,
         }),
       });
     } catch (error) {
       const timedOut = error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError');
-      console.error(`[knock-on] Ling request failed: ${timedOut ? 'timeout' : error instanceof Error ? error.name : 'unknown'}`);
+      console.error(`[knockon] Ling request failed: ${timedOut ? 'timeout' : error instanceof Error ? error.name : 'unknown'}`);
       throw new ApiError(
         timedOut ? 504 : 502,
         'EXPLANATION_FAILED',
@@ -172,7 +172,7 @@ export class ExplanationService {
     }
 
     if (!response.ok) {
-      console.error(`[knock-on] Ling returned HTTP ${response.status}`);
+      console.error(`[knockon] Ling returned HTTP ${response.status}`);
       if (response.status === 401 || response.status === 403) {
         throw new ApiError(503, 'EXPLANATION_UNAVAILABLE', 'AntLing rejected the API key. Check ANTLING_API_KEY and model access.');
       }
@@ -182,9 +182,21 @@ export class ExplanationService {
       throw new ApiError(502, 'EXPLANATION_FAILED', 'Ling could not produce an explanation. Try again.');
     }
 
-    const body = (await response.json().catch(() => null)) as { choices?: { message?: { content?: unknown } }[] } | null;
-    const content = body?.choices?.[0]?.message?.content;
+    const body = (await response.json().catch(() => null)) as {
+      choices?: { message?: { content?: unknown }; finish_reason?: string }[];
+      usage?: { completion_tokens?: number; completion_tokens_details?: { reasoning_tokens?: number } };
+    } | null;
+    const choice = body?.choices?.[0];
+    const content = choice?.message?.content;
     const explanation = typeof content === 'string' ? stripReasoning(content) : '';
+    // Token counts only (never content): helps tune the length budget.
+    console.info(
+      `[knockon] Ling finish=${choice?.finish_reason ?? '?'} completion_tokens=${body?.usage?.completion_tokens ?? '?'} reasoning_tokens=${body?.usage?.completion_tokens_details?.reasoning_tokens ?? '?'}`,
+    );
+    if (choice?.finish_reason === 'length') {
+      // Never show a cut-off answer as if it were complete.
+      throw new ApiError(502, 'EXPLANATION_FAILED', 'Ling’s answer was cut short. Try again.');
+    }
     if (!explanation) {
       throw new ApiError(502, 'EXPLANATION_FAILED', 'Ling returned an empty explanation. Try again.');
     }
@@ -201,6 +213,6 @@ export class ExplanationService {
   }
 }
 
-export function explanationService(): ExplanationService {
-  return new ExplanationService(getDatabase(), lingConfigFromEnv());
+export async function explanationService(): Promise<ExplanationService> {
+  return new ExplanationService(await getDatabase(), lingConfigFromEnv());
 }

@@ -7,13 +7,13 @@ export const dynamic = 'force-dynamic';
 
 /** GET /api/projects: project summaries, most recently updated first. */
 export async function GET() {
-  return handle(() => ok(projectService().listProjects()));
+  return handle(async () => ok(await (await projectService()).listProjects()));
 }
 
 /** POST /api/projects: create a project with one editable baseline. */
 export async function POST(request: Request) {
   return handle(async () => {
     const body = await readJson(request, createProjectRequestSchema);
-    return ok(await projectService().createProject(body), 201);
+    return ok(await (await projectService()).createProject(body), 201);
   });
 }

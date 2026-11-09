@@ -8,6 +8,6 @@ export const dynamic = 'force-dynamic';
 export async function GET(_request: Request, context: { params: Promise<{ projectId: string }> }) {
   return handle(async () => {
     const { projectId } = await context.params;
-    return ok(projectService().getProject(projectId));
+    return ok(await (await projectService()).getProject(projectId));
   });
 }

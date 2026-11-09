@@ -14,6 +14,6 @@ export async function POST(request: Request, context: { params: Promise<{ projec
   return handle(async () => {
     const { projectId, scenarioId } = await context.params;
     const body = await readJson(request, explanationRequestSchema);
-    return ok(await explanationService().explain(projectId, scenarioId, body));
+    return ok(await (await explanationService()).explain(projectId, scenarioId, body));
   });
 }

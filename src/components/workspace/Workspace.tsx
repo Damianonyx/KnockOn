@@ -16,7 +16,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api, ApiClientError, errorMessage } from '@/lib/api/client';
-import type { Assumption, Project, Scenario } from '@/lib/contracts/project';
+import type { Assumption, Explanation, Project, Scenario } from '@/lib/contracts/project';
 import {
   baselineOf,
   confirmMonthlyUnits,
@@ -37,6 +37,7 @@ import { KnockyPose } from '@/components/ui/KnockyPose';
 import { ComparisonView } from './ComparisonView';
 import { ForkDialog, type ForkSpec } from './ForkDialog';
 import { InputsPanel } from './InputsPanel';
+import { ExplainPanel, type ExplainState } from './ExplainPanel';
 import { InspectPanel } from './InspectPanel';
 import { MetricCards } from './MetricCards';
 import { ScenarioList } from './ScenarioList';
@@ -109,7 +110,15 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState<SaveProblem | null>(null);
   const [conflict, setConflict] = useState<{ currentRevision?: number } | null>(null);
-  const [inspect, setInspect] = useState<InspectTarget | null>(null);
+  const [inspect, setInspectRaw] = useState<InspectTarget | null>(null);
+  const [explain, setExplain] = useState<{ scenarioId: string; state: ExplainState } | null>(null);
+  /** Explanations already fetched, by scenario and project revision (each one costs API credit). */
+  const explained = useRef(new Map<string, Explanation>());
+  /** One slide-in panel at a time: inspecting a result closes the explanation. */
+  const setInspect = useCallback((target: InspectTarget | null) => {
+    if (target) setExplain(null);
+    setInspectRaw(target);
+  }, []);
   const [pending, setPending] = useState<Pending | null>(null);
   const [forking, setForking] = useState<{ kind: 'shock' | 'response'; sourceId: string } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -355,6 +364,7 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
       setProblem(null);
       setConflict(null);
       setInspect(null);
+      setExplain(null);
       setActiveId(scenarioId);
       await loadScenario(p, target);
     },
@@ -511,6 +521,43 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
     const s = findScenario(project, inspect.scenarioId);
     return s ? inspectResult(inspect.key, { inputs: s.calculation.inputs, metrics: s.calculation.metrics }) : null;
   }, [inspect, live, project]);
+  // ---------- Ling explanations ----------
+  const runExplain = useCallback(
+    async (force = false) => {
+      const p = projectRef.current;
+      if (!p || !active) return;
+      setInspectRaw(null);
+      const key = `${active.id}:${p.revision}`;
+      const cached = explained.current.get(key);
+      if (cached && !force) {
+        setExplain({ scenarioId: active.id, state: { status: 'ready', explanation: cached } });
+        return;
+      }
+      setExplain({ scenarioId: active.id, state: { status: 'loading' } });
+      let latest = p;
+      try {
+        let result: Explanation;
+        try {
+          result = await api.explain(p.id, active.id, { expectedRevision: p.revision });
+        } catch (error) {
+          // Saved elsewhere in the meantime: reload the project and explain its latest saved version.
+          if (!(error instanceof ApiClientError && error.isConflict) || dirty) throw error;
+          latest = await api.getProject(p.id);
+          setProject(latest);
+          result = await api.explain(latest.id, active.id, { expectedRevision: latest.revision });
+        }
+        explained.current.set(`${active.id}:${result.projectRevision}`, result);
+        setExplain((cur) => (cur && cur.scenarioId === active.id ? { scenarioId: active.id, state: { status: 'ready', explanation: result } } : cur));
+      } catch (error) {
+        const unavailable = error instanceof ApiClientError && error.status === 503;
+        setExplain((cur) =>
+          cur && cur.scenarioId === active.id ? { scenarioId: active.id, state: { status: 'error', message: errorMessage(error), unavailable } } : cur,
+        );
+      }
+    },
+    [active, dirty],
+  );
+
   const inspectContext = useMemo(() => {
     if (!inspect || !project) return '';
     if (inspect.source === 'draft') return `${active?.name ?? ''}${dirty ? ' · unsaved' : ''}`;
@@ -638,11 +685,27 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
               <h1>{active.name}</h1>
               {subtitle && <span className="small muted">{subtitle}</span>}
             </div>
-            {dirty && (
-              <button type="button" className="btn btn-sm btn-ghost" onClick={() => void discard()} disabled={saving}>
-                Discard changes
+            <div className="row">
+              {dirty && (
+                <button type="button" className="btn btn-sm btn-ghost" onClick={() => void discard()} disabled={saving}>
+                  Discard changes
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn-sm explain-btn"
+                onClick={() => void runExplain()}
+                disabled={dirty || explain?.state.status === 'loading'}
+                aria-describedby={dirty ? 'explain-hint' : undefined}
+              >
+                ✦ Explain
               </button>
-            )}
+              {dirty && (
+                <span id="explain-hint" className="tiny muted">
+                  Save to explain
+                </span>
+              )}
+            </div>
           </div>
 
           {problem && (
@@ -727,8 +790,18 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
         </main>
       </div>
 
-      {inspection && (
+      {inspection && !explain && (
         <InspectPanel inspection={inspection} contextLabel={inspectContext} currency={project.currency} onClose={() => setInspect(null)} />
+      )}
+      {explain && explain.scenarioId === active.id && (
+        <ExplainPanel
+          state={explain.state}
+          scenarioName={active.name}
+          currentRevision={project.revision}
+          currency={project.currency}
+          onRetry={() => void runExplain(true)}
+          onClose={() => setExplain(null)}
+        />
       )}
 
       {pending && (

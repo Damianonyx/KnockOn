@@ -9,6 +9,7 @@
 import type {
   CalculationError,
   CreateProjectRequest,
+  Explanation,
   ForkScenarioRequest,
   Project,
   ProjectSummary,
@@ -39,7 +40,7 @@ export class ApiClientError extends Error {
 
 const REQUEST_TIMEOUT_MS = 30_000;
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+async function request<T>(method: string, path: string, body?: unknown, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
   let response: Response;
   try {
     response = await fetch(path, {
@@ -47,7 +48,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
       headers: body === undefined ? { Accept: 'application/json' } : { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body),
       cache: 'no-store',
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (error) {
     const timedOut = error instanceof DOMException && error.name === 'TimeoutError';
@@ -99,6 +100,14 @@ export const api = {
       'PUT',
       `/api/projects/${encodeURIComponent(projectId)}/scenarios/${encodeURIComponent(scenarioId)}`,
       body,
+    ),
+  explain: (projectId: string, scenarioId: string, body: { expectedRevision: number; question?: string }) =>
+    request<Explanation>(
+      'POST',
+      `/api/projects/${encodeURIComponent(projectId)}/scenarios/${encodeURIComponent(scenarioId)}/explanation`,
+      body,
+      // Ling can take a while; the server gives up after 60 seconds.
+      75_000,
     ),
 };
 
