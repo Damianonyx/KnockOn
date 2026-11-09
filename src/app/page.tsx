@@ -66,7 +66,7 @@ export default function Landing() {
           <KnockySolid size={84} />
           <div>
             <h2 id="open-title" className={serif.className}>
-              Ready to see the knock-on?
+              Ready to see the knock‑on?
             </h2>
             <p>Open the app, start with the fictional demo bakery, and try your first shock in a couple of minutes.</p>
           </div>
