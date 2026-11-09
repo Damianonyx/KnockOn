@@ -71,12 +71,16 @@ const BLOCKED_COMMAND = /(insert|remove|delete)-(row|col|range|multi|sheet)|move
  * marked input cells. Values, formulas, and layout are untouched (the template
  * validation only checks cell values and formulas).
  */
-function decorate(workbook: BakeryWorkbook): BakeryWorkbook {
+function decorate(workbook: BakeryWorkbook, availableWidth: number): BakeryWorkbook {
   const sheet = workbook.sheets?.[BAKERY_SHEET_ID] as (BakeryWorkbook['sheets'][string] & {
     columnData?: Record<string, { w?: number }>;
   }) | undefined;
   if (!sheet) return workbook;
-  sheet.columnData = { ...(sheet.columnData ?? {}), 0: { w: 230 }, 1: { w: 150 } };
+  // Fit labels (A) and values (B) to the visible width, so the numbers never sit
+  // off-screen on a phone. 46px is the row-number header; 22px leaves room for the scrollbar.
+  const colB = availableWidth && availableWidth < 520 ? 110 : 150;
+  const colA = availableWidth ? Math.max(130, Math.min(230, availableWidth - 46 - colB - 22)) : 230;
+  sheet.columnData = { ...(sheet.columnData ?? {}), 0: { w: colA }, 1: { w: colB } };
   const cells = sheet.cellData ?? {};
   for (const m of BAKERY_INPUTS) {
     const cell = cells[m.row]?.[m.col];
@@ -124,6 +128,7 @@ interface InjectorAccess {
 
 export class BrowserWorkbookAdapter implements IWorkbookAdapter {
   private readonly univer: Univer;
+  private readonly container: HTMLElement;
   private readonly commands: ICommandService;
   private readonly instances: IUniverInstanceService;
   private readonly session: FormulaCalculationSessionService;
@@ -138,6 +143,7 @@ export class BrowserWorkbookAdapter implements IWorkbookAdapter {
   private disposed = false;
 
   constructor(options: BrowserAdapterOptions) {
+    this.container = options.container;
     this.univer = new Univer({
       theme: defaultTheme,
       locale: LocaleType.EN_US,
@@ -226,7 +232,7 @@ export class BrowserWorkbookAdapter implements IWorkbookAdapter {
         this.instances.disposeUnit(this.unit.getUnitId());
         this.unit = null;
       }
-      const data = decorate(structuredClone(workbook) as BakeryWorkbook) as unknown as Partial<IWorkbookData>;
+      const data = decorate(structuredClone(workbook) as BakeryWorkbook, this.container.clientWidth) as unknown as Partial<IWorkbookData>;
       this.unit = this.univer.createUnit<Partial<IWorkbookData>, Workbook>(UniverInstanceType.UNIVER_SHEET, data);
       await this.commands.executeCommand(
         SetTriggerFormulaCalculationStartMutation.id,
