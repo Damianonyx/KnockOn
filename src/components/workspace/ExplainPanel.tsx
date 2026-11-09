@@ -20,13 +20,20 @@ function Paragraphs({ text }: { text: string }) {
     <div className="explain-text">
       {blocks.map((block, i) => {
         const lines = block.split('\n');
-        if (lines.every((l) => /^\s*[-*•]\s+/.test(l))) {
+        const bullet = /^\s*[-*•]\s+/;
+        // A list, optionally with a lead-in line such as "How it flows:".
+        const lead = bullet.test(lines[0]) ? null : lines[0];
+        const items = lead === null ? lines : lines.slice(1);
+        if (items.length > 0 && items.every((l) => bullet.test(l))) {
           return (
-            <ul key={i}>
-              {lines.map((l, j) => (
-                <li key={j}>{l.replace(/^\s*[-*•]\s+/, '')}</li>
-              ))}
-            </ul>
+            <div key={i}>
+              {lead && <p>{lead}</p>}
+              <ul>
+                {items.map((l, j) => (
+                  <li key={j}>{l.replace(bullet, '')}</li>
+                ))}
+              </ul>
+            </div>
           );
         }
         return <p key={i}>{block}</p>;

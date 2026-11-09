@@ -325,4 +325,4 @@ table.compare .changes { text-align: left; font-size: 0.78rem; color: var(--text
 .explain-btn:hover:not(:disabled) { background: #e1eef0; }
 .explain-text { display: flex; flex-direction: column; gap: 10px; font-size: 0.92rem; line-height: 1.55; }
 .explain-text p { margin: 0; white-space: pre-line; }
-.explain-text ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.explain-text ul { margin: 4px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
