@@ -55,6 +55,13 @@ The planned AI assistant will help users set up a model, identify missing inputs
 
 These AI development roles describe how the app will be built. The model used for explanations inside the finished app is a separate integration decision.
 
+### Who built what
+
+- **Backend foundation: Ling 3.2 Flash.** Server-side Univer recalculation, the project and scenario API, validation and revision conflicts, the original storage, and the Ling explanation service (commits "Add backend: Univer recalculation, SQLite storage, and project API" and "Add Ling 3.2 Flash explanations").
+- **Interface: Claude.** The landing page and Knocky, the projects page, the spreadsheet workspace, scenarios, comparison, inspection, and the Explain panel.
+- **Later backend changes: Claude**, building on Ling's foundation: hosted Postgres storage (Neon on Vercel), the Vercel deployment fixes, and the explanation length handling.
+- **Inside the app, explanations are written live by Ling 3.2 Flash.**
+
 ## First milestone
 
 Complete one bakery workflow from entering figures to saving and reopening scenarios:
