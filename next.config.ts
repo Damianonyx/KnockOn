@@ -3,13 +3,10 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   // The browser editor loads Univer through next/dynamic with ssr: false, so
   // Univer UI code never runs during server rendering. Route handlers run the
-  // headless Univer packages (no DOM) to recalculate saved workbooks; keep those
-  // packages external so Node loads them as published instead of bundling them.
+  // headless Univer packages (no DOM) to recalculate saved workbooks. Those are
+  // bundled, not external: Univer publishes ES modules without "type": "module",
+  // which Vercel's Node runtime refuses to load directly.
   serverExternalPackages: [
-    '@univerjs/core',
-    '@univerjs/engine-formula',
-    '@univerjs/sheets',
-    '@univerjs/sheets-formula',
     // Database drivers: node-postgres for hosted Postgres, PGlite (WebAssembly) locally.
     'pg',
     '@electric-sql/pglite',
