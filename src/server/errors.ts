@@ -17,6 +17,7 @@ export type ApiErrorCode =
   | 'EXPLANATION_UNAVAILABLE'
   | 'EXPLANATION_FAILED'
   | 'DATABASE_NOT_CONFIGURED'
+  | 'RATE_LIMITED'
   | 'INTERNAL_ERROR';
 
 export interface ApiErrorDetails {

@@ -103,7 +103,7 @@ describe('scenario helpers', () => {
     assert.ok(!sameAssumptions(a, []));
   });
   it('orders baseline, then each shock followed by its responses', async () => {
-    const svc = new ProjectService(await openDatabase(':memory:'));
+    const svc = new ProjectService(await openDatabase(':memory:'), 'owner-a');
     let p = await svc.createProject({ name: 'Order', currency: 'EUR', templateId: 'bakery-v1', initialData: 'demo' });
     p = await svc.forkScenario(p.id, { expectedRevision: p.revision, sourceScenarioId: p.baselineScenarioId, kind: 'shock', name: 'S1' });
     const s1 = p.scenarios.find((s) => s.name === 'S1')!;

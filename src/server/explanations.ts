@@ -13,7 +13,9 @@ import type { Explanation, ExplanationRequest } from '@/lib/contracts/project';
 import { BAKERY_INPUTS, BAKERY_RESULTS, BAKERY_SIMPLIFICATIONS } from '@/lib/templates/bakery';
 import { getDatabase, type Sql } from './db';
 import { ApiError, notFound, revisionConflict } from './errors';
+import { DEFAULT_EXPLAIN_LIMITS, explainLimitsFromEnv, takeExplanationQuota, type ExplainLimits } from './rateLimit';
 import * as repo from './repository';
+import type { Visitor } from './visitor';
 
 const DEFAULT_BASE_URL = 'https://api.ant-ling.com/v1';
 const DEFAULT_MODEL = 'Ling-3.2-flash';
@@ -121,15 +123,30 @@ function stripReasoning(text: string): string {
   return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 }
 
+export interface ExplanationOptions {
+  /** Who is asking: scopes the project lookup and the rate limits. */
+  visitor: Visitor;
+  limits?: ExplainLimits;
+  fetchImpl?: typeof fetch;
+}
+
 export class ExplanationService {
+  private readonly visitor: Visitor;
+  private readonly limits: ExplainLimits;
+  private readonly fetchImpl: typeof fetch;
+
   constructor(
     private readonly db: Sql,
     private readonly config: LingConfig | null,
-    private readonly fetchImpl: typeof fetch = fetch,
-  ) {}
+    options: ExplanationOptions,
+  ) {
+    this.visitor = options.visitor;
+    this.limits = options.limits ?? DEFAULT_EXPLAIN_LIMITS;
+    this.fetchImpl = options.fetchImpl ?? fetch;
+  }
 
   async explain(projectId: string, scenarioId: string, request: ExplanationRequest): Promise<Explanation> {
-    const project = await repo.findProject(this.db, projectId);
+    const project = await repo.findProject(this.db, projectId, this.visitor.ownerHash);
     if (!project) throw notFound('Project');
     const scenario = await repo.findScenario(this.db, projectId, scenarioId);
     if (!scenario) throw notFound('Scenario');
@@ -137,6 +154,9 @@ export class ExplanationService {
     if (!this.config) {
       throw new ApiError(503, 'EXPLANATION_UNAVAILABLE', 'Explanations are not set up yet. Add ANTLING_API_KEY to the server environment.');
     }
+
+    // Only now, once the request is valid and Ling is configured, count it against the limits.
+    await takeExplanationQuota(this.db, this.visitor, this.limits);
 
     const parent = scenario.parentScenarioId ? await repo.findScenario(this.db, projectId, scenario.parentScenarioId) : null;
     const baseline = await repo.findScenario(this.db, projectId, project.baselineScenarioId);
@@ -213,6 +233,6 @@ export class ExplanationService {
   }
 }
 
-export async function explanationService(): Promise<ExplanationService> {
-  return new ExplanationService(await getDatabase(), lingConfigFromEnv());
+export async function explanationService(visitor: Visitor): Promise<ExplanationService> {
+  return new ExplanationService(await getDatabase(), lingConfigFromEnv(), { visitor, limits: explainLimitsFromEnv() });
 }

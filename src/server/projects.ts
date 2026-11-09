@@ -155,14 +155,18 @@ function normaliseAssumptions(
 }
 
 export class ProjectService {
-  constructor(private readonly db: Sql) {}
+  /** All operations are scoped to one owner: a visitor only reaches their own projects. */
+  constructor(
+    private readonly db: Sql,
+    private readonly ownerHash: string,
+  ) {}
 
   async listProjects(): Promise<ProjectSummary[]> {
-    return (await repo.listProjects(this.db)).map(toSummary);
+    return (await repo.listProjects(this.db, this.ownerHash)).map(toSummary);
   }
 
   async getProject(projectId: string): Promise<Project> {
-    const project = await repo.findProject(this.db, projectId);
+    const project = await repo.findProject(this.db, projectId, this.ownerHash);
     if (!project) throw notFound('Project');
     const scenarios = (await repo.listScenarios(this.db, projectId)).map(toScenario);
     return {
@@ -202,7 +206,7 @@ export class ProjectService {
         demo,
         createdAt: timestamp,
         updatedAt: timestamp,
-      });
+      }, this.ownerHash);
       await repo.insertScenario(tx, {
         id: baselineId,
         projectId,
@@ -222,7 +226,7 @@ export class ProjectService {
   }
 
   async forkScenario(projectId: string, request: ForkScenarioRequest): Promise<Project> {
-    const project = await repo.findProject(this.db, projectId);
+    const project = await repo.findProject(this.db, projectId, this.ownerHash);
     if (!project) throw notFound('Project');
     if (project.revision !== request.expectedRevision) throw revisionConflict(project.revision);
 
@@ -248,7 +252,7 @@ export class ProjectService {
     await this.db.transaction(async (tx) => {
       const freezeBaseline = request.kind === 'shock';
       if (!(await repo.bumpRevision(tx, projectId, request.expectedRevision, timestamp, { freezeBaseline }))) {
-        throw revisionConflict((await repo.findProject(tx, projectId))?.revision ?? project.revision);
+        throw revisionConflict((await repo.findProject(tx, projectId, this.ownerHash))?.revision ?? project.revision);
       }
       await repo.insertScenario(tx, {
         id: newId('scn'),
@@ -269,7 +273,7 @@ export class ProjectService {
   }
 
   async updateScenario(projectId: string, scenarioId: string, request: UpdateScenarioRequest): Promise<Project> {
-    const project = await repo.findProject(this.db, projectId);
+    const project = await repo.findProject(this.db, projectId, this.ownerHash);
     if (!project) throw notFound('Project');
     const scenario = await repo.findScenario(this.db, projectId, scenarioId);
     if (!scenario) throw notFound('Scenario');
@@ -294,7 +298,7 @@ export class ProjectService {
     const timestamp = now();
     await this.db.transaction(async (tx) => {
       if (!(await repo.bumpRevision(tx, projectId, request.expectedRevision, timestamp))) {
-        throw revisionConflict((await repo.findProject(tx, projectId))?.revision ?? project.revision);
+        throw revisionConflict((await repo.findProject(tx, projectId, this.ownerHash))?.revision ?? project.revision);
       }
       await repo.updateScenarioContent(tx, {
         id: scenarioId,
@@ -311,8 +315,8 @@ export class ProjectService {
   }
 }
 
-export async function projectService(): Promise<ProjectService> {
-  return new ProjectService(await getDatabase());
+export async function projectService(ownerHash: string): Promise<ProjectService> {
+  return new ProjectService(await getDatabase(), ownerHash);
 }
 
 /** Input labels by key, for messages and explanations. */

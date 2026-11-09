@@ -60,6 +60,18 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX scenarios_project ON scenarios(project_id);
   `,
+  // 2: projects belong to one visitor (a private browser ID, stored hashed);
+  // explanation usage counters for rate limits.
+  `
+  ALTER TABLE projects ADD COLUMN owner_hash TEXT;
+  CREATE INDEX projects_owner ON projects(owner_hash, updated_at DESC);
+  CREATE TABLE explanation_usage (
+    bucket TEXT NOT NULL,
+    window_start TEXT NOT NULL,
+    count INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (bucket, window_start)
+  );
+  `,
 ];
 
 async function migrate(sql: Sql): Promise<void> {

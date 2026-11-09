@@ -39,6 +39,18 @@ Projects are stored in Postgres:
 
 The schema is created and upgraded automatically on first use (`schema_migrations` records the version). Every save and its revision check run in one transaction, so two simultaneous saves can never both win.
 
+### Privacy and limits
+
+There are no accounts. Each browser gets a random private ID in an HttpOnly cookie (`ko_owner`), and projects are stored with a hash of it. A visitor only ever sees, edits and explains their own projects; anyone else gets "not found". Clearing cookies or switching browsers starts with an empty list. Projects created before this change have no owner and are no longer listed.
+
+Explain calls Ling, which costs money, so it is limited per visitor, per network and site-wide. Counters live in the database, and a refused request is not counted. Defaults, and the optional variables that change them:
+
+| Limit | Default | Variable |
+| --- | --- | --- |
+| Per visitor | 10 an hour | `EXPLAIN_LIMIT_PER_VISITOR_PER_HOUR` |
+| Per network | 30 an hour | `EXPLAIN_LIMIT_PER_NETWORK_PER_HOUR` |
+| Whole site | 300 a day | `EXPLAIN_LIMIT_SITE_PER_DAY` |
+
 ### Interface
 
 Open http://localhost:3000 (or the port `npm start` reports). The pages are:
@@ -76,7 +88,7 @@ Everything can be done from the Vercel dashboard, including on a phone:
 3. **Environment variables** (Settings → Environment Variables), for Production and Preview:
    - `UNIVER_LICENSE`: the contents of `license.txt`.
    - `ANTLING_API_KEY`: your AntLing key (keep it here only; never in code).
-   - Optional: `ANTLING_BASE_URL` and `ANTLING_MODEL` (defaults: `https://api.ant-ling.com/v1`, `Ling-3.2-flash`), and `SITE_URL` if the site is not at `https://www.knockon.tech`.
+   - Optional: `ANTLING_BASE_URL` and `ANTLING_MODEL` (defaults: `https://api.ant-ling.com/v1`, `Ling-3.2-flash`), `SITE_URL` if the site is not at `https://www.knockon.tech`, and the Explain limits under [Privacy and limits](#privacy-and-limits).
 4. **Redeploy** so the new variables take effect.
 
 If the database is missing, the app says so ("no database is connected") instead of losing projects. If the AntLing key is missing or wrong, Explain says explanations aren't available and the rest of the app keeps working.

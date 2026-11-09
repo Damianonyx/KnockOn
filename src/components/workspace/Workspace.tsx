@@ -549,9 +549,14 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
         explained.current.set(`${active.id}:${result.projectRevision}`, result);
         setExplain((cur) => (cur && cur.scenarioId === active.id ? { scenarioId: active.id, state: { status: 'ready', explanation: result } } : cur));
       } catch (error) {
-        const unavailable = error instanceof ApiClientError && error.status === 503;
+        const status = error instanceof ApiClientError ? error.status : 0;
+        // 503: Ling isn't set up; 429: an explanation limit. Retrying now won't help either.
+        const title =
+          status === 503 ? 'Explanations aren’t available right now.' : status === 429 ? 'That’s enough explaining for now.' : 'Ling couldn’t explain this.';
         setExplain((cur) =>
-          cur && cur.scenarioId === active.id ? { scenarioId: active.id, state: { status: 'error', message: errorMessage(error), unavailable } } : cur,
+          cur && cur.scenarioId === active.id
+            ? { scenarioId: active.id, state: { status: 'error', title, message: errorMessage(error), retry: status !== 503 && status !== 429 } }
+            : cur,
         );
       }
     },
