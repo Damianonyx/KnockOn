@@ -79,6 +79,10 @@ async function migrate(sql: Sql): Promise<void> {
 // ---------- hosted Postgres (node-postgres) ----------
 async function openPostgres(url: string): Promise<Sql> {
   const { Pool } = await import('pg');
+  // Neon URLs say sslmode=require; node-postgres already treats that as full
+  // certificate verification. Say so explicitly to keep that behaviour (and
+  // silence its deprecation warning) when pg changes the default.
+  url = url.replace(/sslmode=(prefer|require|verify-ca)\b/, 'sslmode=verify-full');
   const local = /@(localhost|127\.0\.0\.1)[:/]/.test(url);
   const pool = new Pool({
     connectionString: url,
