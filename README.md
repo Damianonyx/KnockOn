@@ -67,6 +67,7 @@ The name comes from a knock-on effect: one change causes consequences elsewhere.
    - Or **Switch supplier** with a new ingredient cost and delivery cost.
 6. Scroll to **Compare** to see every scenario against the baseline.
 7. Tap any result to inspect its formula, or **✦ Explain** to ask Ling why the numbers look the way they do.
+8. Above the worksheet, **Add overhead chart** to plot monthly energy, rent, wages, other expenses and delivery. Save it with the scenario. **Print / PDF** opens worksheet print preview; **Export Excel** downloads the saved scenario with its formulas and charts.
 
 The same guide, with the model's inputs and formulas, is built into the app at [knockon.tech/docs](https://www.knockon.tech/docs).
 
@@ -104,6 +105,7 @@ flowchart TD
   | `POST /api/projects/:id/scenarios` | Add a shock or response |
   | `PUT /api/projects/:id/scenarios/:sid` | Save a scenario |
   | `POST /api/projects/:id/scenarios/:sid/explanation` | Ask Ling to explain a saved scenario |
+  | `POST /api/projects/:id/scenarios/:sid/export` | Download a saved scenario as `.xlsx`, with an expected revision |
 
 ## Univer
 
@@ -114,8 +116,13 @@ All Univer packages are pinned to the same release, 1.4.0.
 | Editable workbook in the browser, formula bar, cell editor | `@univerjs/sheets`, `@univerjs/sheets-ui`, `@univerjs/sheets-formula`, `@univerjs/sheets-formula-ui` |
 | Headless recalculation on the server | `@univerjs/core`, `@univerjs/engine-formula`, `@univerjs/sheets`, `@univerjs/sheets-formula` |
 | License | `@univerjs-pro/license`, registered only when `UNIVER_LICENSE` is set |
+| Worksheet charts, saved and copied with each scenario | `@univerjs-pro/engine-chart`, `@univerjs-pro/chart-ui`, `@univerjs-pro/sheets-chart`, `@univerjs-pro/sheets-chart-ui` and the drawing plugins |
+| Worksheet printing and browser Save as PDF | `@univerjs-pro/sheets-print` |
+| Excel download with formulas and chart resources | `@univerjs-pro/exchange-node` (server only, with its native binding) |
 
 The server reads `UNIVER_LICENSE` (the contents of `license.txt`) and passes only that to the browser editor. `UNIVER_LICENSE_KEY` and the AntLing key are never sent to the browser.
+
+Excel export requires both license values on the server. Missing, expired or rejected licenses produce an unavailable message without affecting editing or saving. Vercel export requires an unlimited export subscription; metered licenses require a server with persistent local storage for Univer's usage ledger. See [SETUP.md](SETUP.md) for deployment details. The existing comparison charts remain application-rendered; the new worksheet chart uses Univer Pro and updates directly from its source cells.
 
 ## Ant Ling
 
@@ -174,6 +181,7 @@ Without a database URL, data is stored in an embedded Postgres in `./data/pglite
 | Calculations, storage, scenarios, privacy, limits and explanations | `npm test` |
 | The HTTP API against a running server | `npm run smoke:api` |
 | The whole interface in a real browser, including a phone layout | `npm run e2e` |
+| Licensed charts, print preview, Excel download and export access checks | `npm run e2e:pro` |
 
 ## Limits
 
@@ -182,7 +190,7 @@ These are the honest gaps today:
 - **One template:** the bakery model. Freelancer and household templates are not built yet.
 - **Shocks and responses** are the ones listed above; there is no custom scenario type.
 - **No accounts:** projects belong to one browser. Clearing cookies or switching devices starts an empty list.
-- **No deleting** projects or scenarios, and no export.
+- **No deleting** projects or scenarios. Excel export covers one scenario at a time; there is no full-project backup or import.
 - **The sheet** shows the profit margin as a decimal (0.14); the metric cards and comparison show it as a percentage.
 - **Not yet done:** backup and restore of the hosted database, and an external security review.
 

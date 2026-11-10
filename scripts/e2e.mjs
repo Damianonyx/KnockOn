@@ -57,7 +57,7 @@ async function waitSaved(page) {
 }
 
 (async () => {
-  const browser = await chromium.launch({ headless: !process.env.E2E_HEADED });
+  const browser = await chromium.launch({ headless: !process.env.E2E_HEADED, executablePath: process.env.CHROMIUM_PATH || undefined });
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const page = await ctx.newPage();
   const logs = [];

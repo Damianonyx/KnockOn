@@ -19,6 +19,7 @@ const SECTIONS = [
   { id: 'start', title: 'Quick start' },
   { id: 'model', title: 'The bakery model' },
   { id: 'scenarios', title: 'Baseline, shocks and responses' },
+  { id: 'share', title: 'Charts, printing and Excel' },
   { id: 'example', title: 'A worked example' },
   { id: 'compare', title: 'Compare and inspect' },
   { id: 'explain', title: 'Explain' },
@@ -227,6 +228,26 @@ export default function DocsPage() {
               </div>
             </section>
 
+            <section id="share" aria-labelledby="share-h">
+              <h2 id="share-h">Charts, printing and Excel</h2>
+              <p>
+                Use <strong>Add overhead chart</strong> above the worksheet to plot monthly energy, rent, wages,
+                other expenses and supplier delivery. Ingredient costs are separate. The chart appears below the
+                model and updates when its cells change. Save to keep it; new shocks and responses copy it.
+                Use <strong>Show chart</strong> and <strong>Show inputs</strong> to move around the sheet.
+              </p>
+              <p>
+                <strong>Print / PDF</strong> opens worksheet print preview. Choose your paper settings, then Next,
+                and select a printer or Save as PDF in your browser. It prints the worksheet and its charts;
+                comparison cards and explanations are outside that printout.
+              </p>
+              <p>
+                <strong>Export Excel</strong> downloads the saved scenario as an editable Excel workbook, including
+                formulas and charts. Save any changes first. Its filename includes the scenario and saved revision.
+                You can print and export a frozen baseline, but its inputs and charts remain read-only in KnockOn.
+              </p>
+            </section>
+
             <section id="example" aria-labelledby="example-h">
               <h2 id="example-h">A worked example</h2>
               <p>These are the fictional demo figures. Profit is per month.</p>
@@ -372,7 +393,7 @@ export default function DocsPage() {
               <ul>
                 <li>It has one template, the bakery. You can’t add rows or change the formulas.</li>
                 <li>Shocks and responses are the kinds listed above.</li>
-                <li>You can’t delete or export a project or scenario yet.</li>
+                <li>You can’t delete projects or scenarios yet. Excel export covers one scenario at a time; full-project backup and import are not available.</li>
                 <li>It doesn’t forecast, and it doesn’t give financial, legal or tax advice.</li>
               </ul>
             </section>

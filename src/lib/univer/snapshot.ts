@@ -14,6 +14,7 @@ import {
   BAKERY_SHEET_ID,
   BAKERY_TITLE,
 } from '@/lib/templates/bakery';
+import { validateChartResources } from './chart-resources';
 
 /** Minimal structural mirror of Univer's ICellData (the parts the template uses). */
 export interface BakeryCellData {
@@ -190,6 +191,7 @@ export function validateBakerySnapshot(input: unknown): SnapshotValidation {
     }
   }
 
+  issues.push(...validateChartResources(input as unknown as BakeryWorkbook));
   if (issues.length > 0) return { ok: false, issues };
   return { ok: true, workbook: input as unknown as BakeryWorkbook };
 }

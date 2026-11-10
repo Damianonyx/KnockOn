@@ -129,3 +129,11 @@ For a revision conflict, return `currentRevision` in the error object. Preserve 
 ## Explanations
 
 KnockOn uses AntLing's Ling 3.2 Flash (`ANTLING_MODEL`, default `Ling-3.2-flash`) for explanations. The explanation endpoint only describes the current saved revision: send the `expectedRevision` you are showing, and a newer revision returns 409 `REVISION_CONFLICT`. The server sends Ling the saved inputs, formulas, Univer-calculated results, inputs changed from the parent, profit change against the baseline, assumptions with their source and confirmation, and the template simplifications. Explanations are not stored; the UI treats one as stale once the project revision changes. `changedInputs` lists inputs that differ from the parent scenario, so the UI can show what the explanation refers to without relying on Ling. The key stays on the server, and the spreadsheet remains fully usable when Ling is unavailable.
+
+## Charts and Excel downloads
+
+Worksheet snapshots now include `SHEET_CHART_PLUGIN` and `SHEET_DRAWING_PLUGIN` resources. Both must have valid JSON, matching chart IDs and anchors, and sources within this workbook's `model!A1:B16`. Up to six charts are accepted. External workbook sources and non-chart drawings are rejected. Server recalculation saves supported plugin resources, and forks remap their internal workbook references. The frozen-baseline rule also applies to chart edits.
+
+`POST /api/projects/:projectId/scenarios/:scenarioId/export` accepts only `{ "expectedRevision": 2 }`. Ownership is checked before conversion. Unknown or unowned projects/scenarios return 404; an outdated revision returns 409. The server exports the saved workbook, never an arbitrary snapshot from the request. Frozen baselines can be exported. Export does not change the project revision.
+
+A successful response is binary XLSX (`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`), with an attachment filename containing the project name, scenario and revision, `X-KnockOn-Revision`, and `Cache-Control: private, no-store`. Error responses retain the normal JSON error envelope: 503 `EXPORT_UNAVAILABLE` for license/runtime configuration and 502 `EXPORT_FAILED` for conversion failures. The client keeps the scenario intact and displays the failure without automatically resubmitting.

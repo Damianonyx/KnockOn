@@ -211,6 +211,10 @@ input:disabled, textarea:disabled { background: var(--surface-3); color: var(--t
 
 .model-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
 .sheet-card { overflow: hidden; display: flex; flex-direction: column; }
+.scenario-tools { padding: 12px; border-bottom: 1px solid var(--border); }
+.scenario-tools-actions { flex-wrap: wrap; gap: 8px; }
+.scenario-tools p { margin: 8px 0 0; }
+.scenario-tools-error { color: #a4262c; }
 .sheet-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .sheet-host { position: relative; height: 470px; min-width: 560px; }
 .sheet-host .univer-container, .sheet-host > div { height: 100%; }

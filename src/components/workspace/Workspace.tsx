@@ -41,6 +41,7 @@ import { ExplainPanel, type ExplainState } from './ExplainPanel';
 import { InspectPanel } from './InspectPanel';
 import { MetricCards } from './MetricCards';
 import { ScenarioList } from './ScenarioList';
+import { ScenarioTools } from './ScenarioTools';
 import type { InspectTarget, LiveState, SaveProblem, SaveState } from './types';
 
 const SpreadsheetEditor = dynamic(() => import('./SpreadsheetEditor'), {
@@ -758,6 +759,10 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
 
           <div className="model-grid">
             <section className="card sheet-card" aria-label="Spreadsheet">
+              <ScenarioTools key={active.id} adapter={adapter} projectId={project.id} scenarioId={active.id}
+                revision={project.revision} loading={sheetLoading || saving} dirty={dirty} readOnly={readOnly}
+                valid={Boolean(live && live.errors.length === 0 && live.issues.length === 0)}
+                chartCount={adapter?.getChartCount() ?? 0} />
               <div className="sheet-scroll">
                 <div className="sheet-host">
                   {editorError ? (
