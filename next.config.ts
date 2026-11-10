@@ -15,7 +15,8 @@ const nextConfig: NextConfig = {
   ],
   outputFileTracingIncludes: {
     '/api/projects/*/scenarios/*/export': [
-      './node_modules/@univerjs-pro/exchange-node-binding/index.js',
+      // The loader reads its own package.json to check the platform binary version.
+      './node_modules/@univerjs-pro/exchange-node-binding/**',
       './node_modules/@univerjs-pro/exchange-node-binding-linux-x64-gnu/**',
       './node_modules/@univerjs-pro/exchange-node-binding-linux-arm64-gnu/**',
     ],
