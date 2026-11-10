@@ -20,7 +20,7 @@ KnockOn is an interactive economics lab for small business owners and economics 
 
 The name comes from a knock-on effect: one change causes consequences elsewhere.
 
-**Live:** https://www.knockon.tech (the app is at `/projects`). No account is needed: your projects are private to your browser. Demo figures are fictional and for learning.
+**Live:** https://www.knockon.tech (the app is at `/projects`, the documentation at `/docs`). No account is needed: your projects are private to your browser. Demo figures are fictional and for learning.
 
 ## See it
 
@@ -67,6 +67,8 @@ The name comes from a knock-on effect: one change causes consequences elsewhere.
    - Or **Switch supplier** with a new ingredient cost and delivery cost.
 6. Scroll to **Compare** to see every scenario against the baseline.
 7. Tap any result to inspect its formula, or **✦ Explain** to ask Ling why the numbers look the way they do.
+
+The same guide, with the model's inputs and formulas, is built into the app at [knockon.tech/docs](https://www.knockon.tech/docs).
 
 ## How it works
 
@@ -186,7 +188,7 @@ These are the honest gaps today:
 
 ## Repository guide
 
-- `src/app/`: pages (`/` landing, `/projects`, `/projects/[projectId]`) and API routes.
+- `src/app/`: pages (`/` landing, `/projects`, `/projects/[projectId]`, `/docs`) and API routes.
 - `src/components/landing/`: the landing page and Knocky.
 - `src/components/workspace/`: the workspace: spreadsheet, scenarios, comparison, inspect and Explain panels.
 - `src/lib/univer/`: the browser editor adapter and the server recalculation.

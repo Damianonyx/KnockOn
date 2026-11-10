@@ -1,0 +1,67 @@
+/* Documentation page: a contents list beside one readable column. */
+.docs { max-width: 1040px; }
+
+.top { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 26px; }
+.top h1 { font-size: 1.7rem; }
+.top p { color: var(--text-2); margin-top: 4px; }
+
+.layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; align-items: start; }
+
+.toc { position: sticky; top: 20px; font-size: 0.9rem; }
+.toc strong { display: block; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2); margin-bottom: 8px; }
+.toc ol { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--border); }
+.toc a { display: block; padding: 5px 0 5px 14px; margin-left: -2px; border-left: 2px solid transparent; color: var(--text-2); text-decoration: none; }
+.toc a:hover { color: var(--text); border-left-color: var(--brand); }
+
+.body { max-width: 720px; font-size: 1rem; line-height: 1.6; }
+.body section { scroll-margin-top: 20px; padding-bottom: 34px; margin-bottom: 34px; border-bottom: 1px solid var(--border); }
+.body h2 { font-size: 1.4rem; margin-bottom: 12px; }
+.body h3 { font-size: 1.02rem; margin: 24px 0 10px; }
+.body p + p, .body ul + p, .body ol + p, .body div + p, .body dl + p { margin-top: 12px; }
+.body ul, .body ol { margin: 10px 0 0; padding-left: 22px; }
+.body li { margin: 6px 0; }
+.body li ul { margin-top: 6px; }
+.body code { background: var(--surface-3); padding: 1px 6px; border-radius: 5px; white-space: nowrap; }
+
+.steps { counter-reset: step; list-style: none; padding-left: 0 !important; margin-top: 16px !important; }
+.steps li { counter-increment: step; position: relative; padding-left: 42px; margin: 12px 0; min-height: 28px; }
+.steps li::before {
+  content: counter(step); position: absolute; left: 0; top: -1px; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--brand); color: var(--cream); display: grid; place-items: center; font-size: 0.82rem; font-weight: 700;
+}
+
+.tableWrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); margin-top: 10px; }
+.tableWrap table { width: 100%; border-collapse: collapse; font-size: 0.93rem; }
+.tableWrap th, .tableWrap td { padding: 9px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
+.tableWrap tbody tr:last-child td { border-bottom: 0; }
+.tableWrap thead th { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-2); background: var(--surface-2); white-space: nowrap; }
+.tableWrap .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; width: 1%; }
+.tableWrap code { white-space: normal; overflow-wrap: anywhere; }
+.sub { display: block; color: var(--text-2); font-size: 0.9em; margin-top: 2px; }
+.up { color: var(--good); font-weight: 700; }
+.down { color: var(--bad); font-weight: 700; }
+
+.note { color: var(--text-2); font-size: 0.92rem; }
+
+.defs { margin: 14px 0 0; display: flex; flex-direction: column; gap: 14px; }
+.defs dt { font-weight: 700; }
+.defs dd { margin: 3px 0 0; }
+
+.callout { margin-top: 16px; padding: 14px 16px; border-radius: var(--radius); background: #fff3e4; border: 1px solid #f4cfa3; color: #4d2c00; }
+.callout p { margin-top: 4px; }
+
+.end { margin-top: 4px; }
+
+@media (max-width: 860px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .toc { position: static; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .toc ol { border-left: 0; columns: 2; column-gap: 18px; }
+  .toc a { padding: 5px 0; margin-left: 0; border-left: 0; break-inside: avoid; }
+}
+@media (max-width: 560px) {
+  .top h1 { font-size: 1.45rem; }
+  .body h2 { font-size: 1.25rem; }
+  .toc ol { columns: 1; }
+  .tableWrap th, .tableWrap td { padding: 8px 10px; }
+  .tableWrap table { font-size: 0.88rem; }
+}

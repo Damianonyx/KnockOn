@@ -75,6 +75,8 @@ code, .mono { font-family: var(--mono); font-size: 0.9em; }
 .brand img { width: 30px; height: 30px; border-radius: 7px; background: #fff; }
 .brand .tagline { font-weight: 400; color: #b9cfd2; font-size: 0.85rem; }
 .app-header .spacer { flex: 1; }
+.header-link { margin-left: auto; color: var(--cream); text-decoration: none; font-size: 0.9rem; font-weight: 600; padding: 6px 4px; }
+.header-link:hover { text-decoration: underline; }
 .header-crumb { color: #cfe0e2; font-size: 0.9rem; display: flex; gap: 8px; align-items: center; min-width: 0; }
 .header-crumb strong { color: var(--cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 32ch; }
 

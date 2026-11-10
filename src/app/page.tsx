@@ -33,6 +33,7 @@ export default function Landing() {
           <span>KnockOn</span>
         </Link>
         <a href="#how">How it works</a>
+        <Link href="/docs">Docs</Link>
         <Link href="/projects" className={styles.navApp}>
           Open app
         </Link>

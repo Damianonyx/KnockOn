@@ -656,9 +656,13 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
           <button type="button" className="btn btn-sm next-step" onClick={() => requestFork(nextStep.kind, nextStep.sourceId)}>
             {nextStep.label}
           </button>
-          <Link href="/projects" className="small" style={{ marginTop: 'auto' }}>
-            ← All projects
-          </Link>
+          <div className="row small" style={{ marginTop: 'auto', justifyContent: 'space-between' }}>
+            <Link href="/projects">← All projects</Link>
+            {/* A new tab, so reading the docs never interrupts unsaved work. */}
+            <a href="/docs" target="_blank" rel="noopener">
+              Docs
+            </a>
+          </div>
         </aside>
 
         <main className="ws-main">
