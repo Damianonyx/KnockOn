@@ -81,6 +81,20 @@ async function waitSaved(page) {
   await page.waitForURL(/\/projects$/);
   check('Open app goes to the app', page.url().endsWith('/projects'));
 
+  // 0b. Documentation: reachable from the landing page and the app, with the model's real formulas
+  await page.goto(`${BASE}/`);
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Docs' }).click();
+  await page.waitForURL(/\/docs$/);
+  check('docs page opens from the landing page', await page.getByRole('heading', { name: 'Documentation' }).isVisible());
+  const docsText = await page.getByRole('article').innerText();
+  check('docs list the model formulas', docsText.includes('=B11-B14') && docsText.includes('=SUM(B5:B9)') && docsText.includes('Monthly supplier delivery cost'));
+  await page.getByRole('navigation', { name: 'On this page' }).getByRole('link', { name: 'Explain' }).click();
+  check('docs contents jump to a section', page.url().endsWith('#explain'));
+  await shot(page, 'docs', { fullPage: true });
+  await page.getByRole('link', { name: 'Your projects', exact: true }).click();
+  await page.waitForURL(/\/projects$/);
+  check('app header links to the docs', await page.getByRole('banner').getByRole('link', { name: 'Docs' }).isVisible());
+
   await page.goto(`${BASE}/projects`);
   await page.getByLabel('Project name').fill('E2E Bakery');
   await page.getByRole('button', { name: 'Create project' }).click();
