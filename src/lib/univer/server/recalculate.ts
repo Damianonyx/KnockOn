@@ -8,7 +8,8 @@
  * The server never trusts client-supplied results (docs/BUILD_BRIEF.md,
  * "Calculation rules").
  */
-import { ICommandService, LogLevel, Univer, UniverInstanceType, type IWorkbookData } from '@univerjs/core';
+import { ICommandService, LocaleType, LogLevel, mergeLocales, Univer, UniverInstanceType, type IWorkbookData } from '@univerjs/core';
+import { FUniver } from '@univerjs/core/facade';
 import {
   FormulaCalculationSessionService,
   SetTriggerFormulaCalculationStartMutation,
@@ -16,9 +17,17 @@ import {
 } from '@univerjs/engine-formula';
 import { UniverSheetsPlugin } from '@univerjs/sheets';
 import { UniverSheetsFormulaPlugin } from '@univerjs/sheets-formula';
+import { UniverDrawingPlugin } from '@univerjs/drawing';
+import { UniverSheetsDrawingPlugin } from '@univerjs/sheets-drawing';
+import { UniverSheetsChartPlugin } from '@univerjs-pro/sheets-chart';
+import SheetsChartEnUS from '@univerjs-pro/sheets-chart/locale/en-US';
+import EngineChartEnUS from '@univerjs-pro/engine-chart/locale/en-US';
+import { UniverLicensePlugin } from '@univerjs-pro/license';
+import '@univerjs/sheets/facade';
 import { BAKERY_SHEET_ID } from '@/lib/templates/bakery';
 import { readBakeryProjection, type BakeryProjection } from '../calculate';
 import { validateBakerySnapshot, withoutCachedResults, type BakeryWorkbook, type SnapshotIssue } from '../snapshot';
+import { CHART_RESOURCE, DRAWING_RESOURCE } from '../chart-resources';
 
 /** Longest a single recalculation may take before the request fails. */
 const RECALC_TIMEOUT_MS = 10_000;
@@ -56,14 +65,20 @@ export async function recalculateWorkbook(snapshot: unknown): Promise<Recalculat
   const validation = validateBakerySnapshot(snapshot);
   if (!validation.ok) throw new WorkbookValidationError(validation.issues);
   const input = withoutCachedResults(validation.workbook);
+  // Persist supported chart resources only, not arbitrary drawing/OLE or permission plugins submitted by a client.
+  if (Array.isArray(input.resources)) input.resources = input.resources.filter((r) => [CHART_RESOURCE, DRAWING_RESOURCE].includes(r.name));
 
   // A fresh instance per calculation keeps requests isolated (no shared unit
   // ids or state between users) and is fast enough for the bakery template.
-  const univer = new Univer({ logLevel: LogLevel.SILENT });
+  const univer = new Univer({ logLevel: LogLevel.SILENT, locale: LocaleType.EN_US, locales: { [LocaleType.EN_US]: mergeLocales(EngineChartEnUS, SheetsChartEnUS) } });
   try {
+    if (process.env.UNIVER_LICENSE?.trim()) univer.registerPlugin(UniverLicensePlugin, { license: process.env.UNIVER_LICENSE.trim() });
     univer.registerPlugin(UniverSheetsPlugin);
     univer.registerPlugin(UniverFormulaEnginePlugin);
     univer.registerPlugin(UniverSheetsFormulaPlugin);
+    univer.registerPlugin(UniverDrawingPlugin);
+    univer.registerPlugin(UniverSheetsDrawingPlugin);
+    univer.registerPlugin(UniverSheetsChartPlugin);
     const unit = univer.createUnit(UniverInstanceType.UNIVER_SHEET, input as unknown as Partial<IWorkbookData>);
     const injector = (univer as unknown as InjectorAccess).__getInjector();
 
@@ -78,7 +93,8 @@ export async function recalculateWorkbook(snapshot: unknown): Promise<Recalculat
       throw new RecalculationTimeoutError();
     }
 
-    const workbook = unit.getSnapshot() as unknown as BakeryWorkbook;
+    // Facade save includes plugin resources; Workbook.getSnapshot() alone loses chart models and anchors.
+    const workbook = FUniver.newAPI(univer).getWorkbook(unit.getUnitId())!.save() as unknown as BakeryWorkbook;
     workbook.sheetOrder = [BAKERY_SHEET_ID];
     return { workbook, projection: readBakeryProjection(workbook) };
   } finally {

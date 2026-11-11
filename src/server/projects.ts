@@ -29,6 +29,7 @@ import {
 import type { BakeryProjection } from '@/lib/univer/calculate';
 import { readBakeryInput, type BakeryWorkbook } from '@/lib/univer/snapshot';
 import { recalculateWorkbook, WorkbookValidationError } from '@/lib/univer/server/recalculate';
+import { copyWorkbookForScenario } from '@/lib/univer/chart-resources';
 import { getDatabase, type Sql } from './db';
 import { ApiError, notFound, revisionConflict } from './errors';
 import * as repo from './repository';
@@ -244,8 +245,7 @@ export class ProjectService {
     }
 
     // Fork from the persisted source with a fresh workbook id so scenarios never alias.
-    const copy = structuredClone(source.workbook);
-    copy.id = newId('wb');
+    const copy = copyWorkbookForScenario(source.workbook, newId('wb'));
     const { workbook, calculation } = await calculateOrReject(copy);
 
     const timestamp = now();

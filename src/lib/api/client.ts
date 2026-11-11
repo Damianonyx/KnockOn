@@ -93,6 +93,27 @@ export const api = {
   listProjects: () => request<ProjectSummary[]>('GET', '/api/projects'),
   createProject: (body: CreateProjectRequest) => request<Project>('POST', '/api/projects', body),
   getProject: (projectId: string) => request<Project>('GET', `/api/projects/${encodeURIComponent(projectId)}`),
+  exportScenario: async (projectId: string, scenarioId: string, expectedRevision: number): Promise<{ blob: Blob; filename: string }> => {
+    let response: Response;
+    try {
+      response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/scenarios/${encodeURIComponent(scenarioId)}/export`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expectedRevision }),
+        cache: 'no-store',
+        signal: AbortSignal.timeout(65_000),
+      });
+    } catch {
+      throw new ApiClientError(0, 'NETWORK_ERROR', 'Could not download the Excel file. Check the connection and try again.');
+    }
+    if (!response.ok) {
+      const json = await response.json().catch(() => null);
+      throw new ApiClientError(response.status, json?.error?.code ?? 'EXPORT_FAILED', json?.error?.message ?? 'The Excel download failed.');
+    }
+    if (!response.headers.get('content-type')?.includes('spreadsheetml.sheet')) throw new ApiClientError(response.status, 'BAD_RESPONSE', 'The server did not return an Excel file.');
+    const filename = response.headers.get('content-disposition')?.match(/filename="([^"]+)"/)?.[1] ?? 'KnockOn-scenario.xlsx';
+    return { blob: await response.blob(), filename };
+  },
   forkScenario: (projectId: string, body: ForkScenarioRequest) =>
     request<Project>('POST', `/api/projects/${encodeURIComponent(projectId)}/scenarios`, body),
   saveScenario: (projectId: string, scenarioId: string, body: UpdateScenarioRequest) =>

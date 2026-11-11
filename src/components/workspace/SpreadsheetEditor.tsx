@@ -9,6 +9,11 @@ import '@univerjs/ui/lib/index.css';
 import '@univerjs/docs-ui/lib/index.css';
 import '@univerjs/sheets-ui/lib/index.css';
 import '@univerjs/sheets-formula-ui/lib/index.css';
+import '@univerjs/drawing-ui/lib/index.css';
+import '@univerjs/sheets-drawing-ui/lib/index.css';
+import '@univerjs-pro/chart-ui/lib/index.css';
+import '@univerjs-pro/sheets-chart-ui/lib/index.css';
+import '@univerjs-pro/sheets-print/lib/index.css';
 import { useEffect, useRef } from 'react';
 import { BrowserWorkbookAdapter } from '@/lib/univer/browser/adapter';
 

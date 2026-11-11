@@ -1,0 +1,10 @@
+[
+  {
+    "name": "SHEET_DRAWING_PLUGIN",
+    "data": "{\"model\":{\"data\":{\"3NlTe1rQhhzPoijsSt0bX\":{\"unitId\":\"chart-probe\",\"subUnitId\":\"model\",\"drawingId\":\"3NlTe1rQhhzPoijsSt0bX\",\"drawingType\":2,\"componentKey\":\"SheetsChartComponent\",\"sheetTransform\":{\"from\":{\"row\":18,\"rowOffset\":0,\"column\":0,\"columnOffset\":0},\"to\":{\"row\":29,\"rowOffset\":16,\"column\":3,\"columnOffset\":186}},\"transform\":{\"left\":46,\"top\":452,\"width\":450,\"height\":280},\"axisAlignSheetTransform\":{\"from\":{\"row\":18,\"rowOffset\":0,\"column\":0,\"columnOffset\":0},\"to\":{\"row\":29,\"rowOffset\":16,\"column\":3,\"columnOffset\":186}},\"data\":{\"border\":\"#979DAC\",\"background\":\"#fff\"},\"allowTransform\":true}},\"order\":[\"3NlTe1rQhhzPoijsSt0bX\"]}}"
+  },
+  {
+    "name": "SHEET_CHART_PLUGIN",
+    "data": "{\"model\":[{\"rangeInfo\":{\"rangeInfo\":{\"unitId\":\"chart-probe\",\"subUnitId\":\"model\",\"range\":{\"startRow\":4,\"startColumn\":0,\"endRow\":8,\"endColumn\":1,\"startAbsoluteRefType\":0,\"endAbsoluteRefType\":0,\"rangeType\":0}},\"isRowDirection\":false,\"header\":{}},\"id\":\"3NlTe1rQhhzPoijsSt0bX\",\"chartType\":268435460,\"context\":{\"categoryIndexes\":[0],\"multiLevelCategoryAxis\":false,\"seriesIndexes\":[1]},\"style\":{\"titles\":{\"title\":{\"content\":\"Monthly overheads\"}}},\"dataAggregation\":{}}]}"
+  }
+]
