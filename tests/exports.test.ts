@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import type { IWorkbookData } from '@univerjs/core';
 import { openDatabase } from '@/server/db';
 import { ProjectService } from '@/server/projects';
-import { ExportService, excelFilename } from '@/server/exports';
+import { ExportService, excelFilename, createRemoteWorkbookConverter } from '@/server/exports';
 import { ApiError } from '@/server/errors';
 
 describe('Excel export access and snapshot', () => {
@@ -35,5 +35,33 @@ describe('Excel export access and snapshot', () => {
     const name = excelFilename({ name: '../../\r\nCookie: secret 🍞', revision: 8 }, { name: 'Price "response"' });
     assert.match(name, /^[a-zA-Z0-9-]+\.xlsx$/);
     assert.ok(name.endsWith('-r8.xlsx'));
+  });
+});
+
+describe('Private conversion service', () => {
+  const token = 'a'.repeat(64);
+  const workbook = { id: 'scenario' } as IWorkbookData;
+
+  it('sends only the workbook with server authorization and rejects insecure configuration', async () => {
+    let calls = 0;
+    const fetcher: typeof fetch = async (url, init) => {
+      calls++;
+      assert.equal(String(url), 'https://exports.example/v1/export/xlsx');
+      assert.deepEqual(JSON.parse(String(init?.body)), { workbook });
+      assert.equal(new Headers(init?.headers).get('authorization'), `Bearer ${token}`);
+      assert.equal(init?.redirect, 'error');
+      return new Response('PK-file', { headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' } });
+    };
+    assert.equal((await createRemoteWorkbookConverter('https://exports.example/v1/export/xlsx', token, fetcher)(workbook)).toString(), 'PK-file');
+    await assert.rejects(createRemoteWorkbookConverter('http://exports.example/v1/export/xlsx', token, fetcher)(workbook), (e: unknown) => e instanceof ApiError && e.status === 503);
+    assert.equal(calls, 1);
+  });
+
+  it('does not retry failures and rejects a successful HTML response instead of downloading it', async () => {
+    let calls = 0;
+    const fetcher: typeof fetch = async () => { calls++; return new Response('', { status: 503 }); };
+    await assert.rejects(createRemoteWorkbookConverter('https://exports.example/v1/export/xlsx', token, fetcher)(workbook), (e: unknown) => e instanceof ApiError && e.code === 'EXPORT_UNAVAILABLE');
+    assert.equal(calls, 1);
+    await assert.rejects(createRemoteWorkbookConverter('https://exports.example/v1/export/xlsx', token, async () => new Response('<html>Unavailable</html>'))(workbook), (e: unknown) => e instanceof ApiError && e.code === 'EXPORT_FAILED');
   });
 });

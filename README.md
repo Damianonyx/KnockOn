@@ -118,11 +118,11 @@ All Univer packages are pinned to the same release, 1.4.0.
 | License | `@univerjs-pro/license`, registered only when `UNIVER_LICENSE` is set |
 | Worksheet charts, saved and copied with each scenario | `@univerjs-pro/engine-chart`, `@univerjs-pro/chart-ui`, `@univerjs-pro/sheets-chart`, `@univerjs-pro/sheets-chart-ui` and the drawing plugins |
 | Worksheet printing and browser Save as PDF | `@univerjs-pro/sheets-print` |
-| Excel download with formulas and chart resources | `@univerjs-pro/exchange-node` (server only, with its native binding) |
+| Excel download with formulas and chart resources | `@univerjs-pro/exchange-node` in the private [conversion service](services/univer-export/README.md) |
 
 The server reads `UNIVER_LICENSE` (the contents of `license.txt`) and passes only that to the browser editor. `UNIVER_LICENSE_KEY` and the AntLing key are never sent to the browser.
 
-Excel export requires both license values on the server. Missing, expired or rejected licenses produce an unavailable message without affecting editing or saving. Vercel export requires an unlimited export subscription; metered licenses require a server with persistent local storage for Univer's usage ledger. See [SETUP.md](SETUP.md) for deployment details. The existing comparison charts remain application-rendered; the new worksheet chart uses Univer Pro and updates directly from its source cells.
+Excel export requires a separate conversion service with persistent storage and both license values. Univer needs that storage even for unlimited licenses; Vercel Functions cannot host the converter. The app calls the service with a private token. Export stays disabled until its URL and token are configured, and license or service errors produce an unavailable message. See [SETUP.md](SETUP.md) for deployment details. The existing comparison charts remain application-rendered; the new worksheet chart uses Univer Pro and updates directly from its source cells.
 
 ## Ant Ling
 
@@ -168,6 +168,7 @@ Without a database URL, data is stored in an embedded Postgres in `./data/pglite
 |---|---|---|
 | `DATABASE_URL` | server | Postgres connection string. Required on Vercel; the Neon integration sets it. |
 | `UNIVER_LICENSE` | server, passed to the editor | Contents of Univer `license.txt`. |
+| `UNIVER_EXPORT_URL`, `UNIVER_EXPORT_TOKEN` | server only | Private Excel conversion endpoint and its shared token. See the conversion service setup. |
 | `ANTLING_API_KEY` | server | Turns on Explain. |
 | `ANTLING_BASE_URL`, `ANTLING_MODEL` | server, optional | Defaults: `https://api.ant-ling.com/v1`, `Ling-3.2-flash`. |
 | `EXPLAIN_LIMIT_PER_VISITOR_PER_HOUR`, `EXPLAIN_LIMIT_PER_NETWORK_PER_HOUR`, `EXPLAIN_LIMIT_SITE_PER_DAY` | server, optional | Explain limits. Defaults: 10, 30, 300. |

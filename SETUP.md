@@ -5,7 +5,8 @@ For a fresh checkout, copy `.env.example` to `.env` and enter your Univer licens
 | Variable | Value |
 | --- | --- |
 | `UNIVER_LICENSE` | Full contents of your `license.txt` file. |
-| `UNIVER_LICENSE_KEY` | Full contents of your `licenseKey.txt` file. |
+| `UNIVER_EXPORT_URL` | HTTPS endpoint of the separate conversion service, ending in `/v1/export/xlsx`. Optional until hosted. |
+| `UNIVER_EXPORT_TOKEN` | Private token shared with that service. |
 | `ANTLING_API_KEY` | Your API key from AntLing's console. |
 | `ANTLING_BASE_URL` | `https://api.ant-ling.com/v1` for direct AntLing API access. |
 | `ANTLING_MODEL` | `Ling-3.2-flash`; already configured. |
@@ -31,7 +32,7 @@ npm run dev            # http://localhost:3000, API under /api
 | `npm run build` then `npm start` | Production build and server. |
 | `npm run e2e` | With the app running, drives the full bakery workflow in a real browser (Playwright + Chromium): create, edit in the sheet and controls, save, shock, price and supplier responses, frozen baseline, inspect, compare, reload, plus validation, zero revenue, a loss, network failure, a save conflict, and phone layout. Set `BASE_URL` for another port, `E2E_SCREENSHOTS=1` to save screenshots to `verify-results/`, `E2E_HEADED=1` to watch. It creates a demo project in your database. On a fresh machine, run `npx playwright install chromium` once first. |
 | `npm run smoke:api` | With the app running, runs the full bakery workflow over HTTP. Set `BASE_URL` for a port other than 3000. It creates a demo project in your database. |
-| `npm run e2e:pro` | Checks chart saving, scenario copying, print preview, an actual licensed Excel download, export ownership and mobile layout. Both Univer license variables must be configured. Creates a demo project but uses no Ling credits. Set `BASE_URL` for another server and `CHROMIUM_PATH` to use an existing Chromium installation. |
+| `npm run e2e:pro` | Checks chart saving, scenario copying, print preview, an actual licensed Excel download, export ownership and mobile layout. The private conversion service must be running, with `UNIVER_EXPORT_URL` and `UNIVER_EXPORT_TOKEN` configured in the app. Creates a demo project but uses no Ling credits. Set `BASE_URL` for another server and `CHROMIUM_PATH` to use an existing Chromium installation. |
 
 Projects are stored in Postgres:
 
@@ -82,13 +83,13 @@ Two rules guide the interface: cut settings pages, filter bars and mode switches
 
 ## Deploy on Vercel
 
-Everything can be done from the Vercel dashboard, including on a phone:
+The main app is hosted on Vercel. Excel conversion uses a separate service with persistent storage, described below:
 
 1. **Import** the GitHub repository as a Vercel project (framework: Next.js, no settings to change).
 2. **Database:** in the project, open **Storage**, choose **Create Database → Neon (Postgres)**, and connect it to this project for all environments. Vercel adds `DATABASE_URL` automatically. Tables are created on the first request.
 3. **Environment variables** (Settings → Environment Variables), for Production and Preview:
    - `UNIVER_LICENSE`: the contents of `license.txt`.
-   - `UNIVER_LICENSE_KEY`: the contents of `licenseKey.txt`, required by server-side Excel conversion. Keep it private.
+   - `UNIVER_EXPORT_URL` and `UNIVER_EXPORT_TOKEN`: configure these after hosting the [conversion service](services/univer-export/README.md). Until then, Excel export is disabled.
    - `ANTLING_API_KEY`: your AntLing key (keep it here only; never in code).
    - Optional: `ANTLING_BASE_URL` and `ANTLING_MODEL` (defaults: `https://api.ant-ling.com/v1`, `Ling-3.2-flash`), `SITE_URL` if the site is not at `https://www.knockon.tech`, and the Explain limits under [Privacy and limits](#privacy-and-limits).
 4. **Redeploy** so the new variables take effect.
@@ -101,7 +102,7 @@ The Web SDK takes the contents of `license.txt` in its license plugin or advance
 
 Setting an environment value does not establish that a license is valid or covers a specific domain or feature. Verify those when the SDK is integrated.
 
-How the editor receives it: the project page (`src/app/projects/[projectId]/page.tsx`) is a server component that reads only `UNIVER_LICENSE` and passes it to the browser editor, which registers Univer's license plugin with it. Nothing else from the environment is passed to the browser, and no variable uses a `NEXT_PUBLIC_` prefix. Core editing works without the license; chart and print permissions follow Univer's licensing rules.
+How the editor receives it: the project page (`src/app/projects/[projectId]/page.tsx`) is a server component that reads only `UNIVER_LICENSE` and passes it to the browser editor, which registers Univer's license plugin with it. Only the license and a boolean indicating export availability are passed to the browser, and no variable uses a `NEXT_PUBLIC_` prefix. Core editing works without the license; chart and print permissions follow Univer's licensing rules.
 
 ### Pro features
 
@@ -109,11 +110,11 @@ How the editor receives it: the project page (`src/app/projects/[projectId]/page
 - **Print / PDF:** opens Univer's worksheet print preview. Choose Next and the browser's Save as PDF or a printer. This prints the worksheet and its drawings, not the surrounding comparison UI or Ling explanation. The adapter awaits the exported print operation because the 1.4.0 Facade uses a synchronous call for that asynchronous operation.
 - **Export Excel:** downloads a saved scenario. Unsaved changes disable the button. The server verifies ownership and the expected revision, then converts the persisted workbook with Univer Exchange. Formulas, cached server results, formatting and chart resources are included. It does not call Ling or modify the project.
 
-All SDK packages are pinned to 1.4.0; the lockfile also pins the compatible native binding. Development and builds use Webpack: the expanded Pro bundle exhausted the 8 GB test workspace while compiling with Turbopack. Native conversion runs only in Node; `next.config.ts` keeps the binding external and traces its Linux artifacts into the export function.
+All SDK packages are pinned to 1.4.0; the lockfile also pins the compatible native binding. Development and builds use Webpack: the expanded Pro bundle exhausted the 8 GB test workspace while compiling with Turbopack. Native conversion runs in `services/univer-export`, separately from the Next.js app. Its own lockfile pins the converter and native binding.
 
-The export service requires a currently valid commercial license and does not silently switch to the free export tier. Vercel has no persistent local filesystem, so the handler refuses metered subscriptions there; these need a persistent conversion server for Univer's usage ledger. The supplied license reports an unlimited export allowance until **3 December 2026**. Renew it before expiry. Runtime/storage/license failures return `EXPORT_UNAVAILABLE`; conversion failures return `EXPORT_FAILED`, with no automatic retries that might consume another export.
+The export service requires a currently valid commercial license and does not silently switch to the free export tier. The native SDK requires writable persistent storage for every license, including unlimited subscriptions. A hosted Vercel test confirmed `LICENSE_USAGE_STORAGE_ERROR`; Vercel Functions cannot retain the SDK usage state. Run the supplied [conversion service](services/univer-export/README.md) with its persistent volume and HTTPS endpoint, then set its URL and shared token in Vercel. The supplied license reports an unlimited export allowance until **3 December 2026**. Renew it before expiry. Runtime/storage/license failures return `EXPORT_UNAVAILABLE`; conversion failures return `EXPORT_FAILED`, with no automatic retries that might consume another export.
 
-Set both license variables for a review branch's Preview environment as well as Production, then redeploy the corresponding environment. Existing Production-only variables are not inherited by previews. Never commit either credential or include `UNIVER_LICENSE_KEY` in client props.
+Set `UNIVER_LICENSE` in both Preview and Production. Set `UNIVER_EXPORT_URL` and `UNIVER_EXPORT_TOKEN` there when the conversion service is hosted. Both license files belong in that service's environment. Existing Production-only variables are not inherited by previews. Never commit credentials or include server keys/tokens in client props.
 
 [Univer license configuration](https://docs.univer.ai/server/license)
 

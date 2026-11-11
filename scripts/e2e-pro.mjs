@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** Verify licensed charts, worksheet printing and real Excel downloads against a running app.
- * Creates a visitor-owned demo project; uses no Ling credits. Both license variables must be configured.
+ * Creates a visitor-owned demo project; uses no Ling credits. Configure the licensed conversion service first.
  * BASE_URL=http://localhost:3100 CHROMIUM_PATH=/usr/bin/chromium npm run e2e:pro
  */
 import assert from 'node:assert/strict';
@@ -76,14 +76,22 @@ try {
   await page.screenshot({ path: path.join(dir, 'univer-pro-shock.png'), fullPage: true });
   pass('copied chart points at the shock workbook; baseline figures stay unchanged');
 
-  const downloadPromise = page.waitForEvent('download', { timeout: 65_000 });
-  await page.getByRole('button', { name: 'Export Excel', exact: true }).click();
-  const download = await downloadPromise;
-  assert.match(download.suggestedFilename(), /Energy-600month-r\d+\.xlsx$/);
-  const file = path.join(dir, 'univer-pro-scenario.xlsx');
-  await download.saveAs(file);
-  assert.equal(fs.readFileSync(file).subarray(0, 2).toString(), 'PK');
-  pass('Excel button downloads an XLSX workbook from the licensed server converter');
+  if (process.env.E2E_EXPORT_UNAVAILABLE === '1') {
+    assert.equal(await page.getByRole('button', { name: 'Export Excel', exact: true }).isDisabled(), true);
+    const unavailable = await page.request.post(`${projectUrl}/scenarios/${shock.id}/export`, { data: { expectedRevision: p.revision } });
+    assert.equal(unavailable.status(), 503);
+    assert.equal((await unavailable.json()).error.code, 'EXPORT_UNAVAILABLE');
+    pass('Excel export is clearly unavailable until a conversion service is configured');
+  } else {
+    const downloadPromise = page.waitForEvent('download', { timeout: 65_000 });
+    await page.getByRole('button', { name: 'Export Excel', exact: true }).click();
+    const download = await downloadPromise;
+    assert.match(download.suggestedFilename(), /Energy-600month-r\d+\.xlsx$/);
+    const file = path.join(dir, 'univer-pro-scenario.xlsx');
+    await download.saveAs(file);
+    assert.equal(fs.readFileSync(file).subarray(0, 2).toString(), 'PK');
+    pass('Excel button downloads an XLSX workbook from the licensed server converter');
+  }
 
   const exportUrl = `${projectUrl}/scenarios/${shock.id}/export`;
   assert.equal((await page.request.post(exportUrl, { data: { expectedRevision: 1 } })).status(), 409);

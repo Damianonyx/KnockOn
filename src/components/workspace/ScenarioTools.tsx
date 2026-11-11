@@ -14,9 +14,10 @@ interface Props {
   readOnly: boolean;
   valid: boolean;
   chartCount: number;
+  excelExportAvailable: boolean;
 }
 
-export function ScenarioTools({ adapter, projectId, scenarioId, revision, loading, dirty, readOnly, valid, chartCount }: Props) {
+export function ScenarioTools({ adapter, projectId, scenarioId, revision, loading, dirty, readOnly, valid, chartCount, excelExportAvailable }: Props) {
   const [busy, setBusy] = useState<'chart' | 'print' | 'export' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const ready = Boolean(adapter) && !loading && !busy;
@@ -65,11 +66,13 @@ export function ScenarioTools({ adapter, projectId, scenarioId, revision, loadin
         <button type="button" className="btn btn-sm" disabled={!ready || !valid} onClick={() => void run('print')}>
           {busy === 'print' ? 'Preparing…' : 'Print / PDF'}
         </button>
-        <button type="button" className="btn btn-sm" disabled={!ready || dirty || !valid} onClick={() => void run('export')}
+        <button type="button" className="btn btn-sm" disabled={!ready || dirty || !valid || !excelExportAvailable} onClick={() => void run('export')}
+          title={!excelExportAvailable ? 'Excel export is temporarily unavailable.' : undefined}
           aria-describedby={dirty ? 'export-hint' : undefined}>
           {busy === 'export' ? 'Exporting…' : 'Export Excel'}
         </button>
       </div>
+      {!excelExportAvailable && <p className="tiny muted">Excel export is temporarily unavailable.</p>}
       {dirty && <p id="export-hint" className="tiny muted">Save changes to export the latest scenario to Excel.</p>}
       {error && <p className="small scenario-tools-error" role="alert">{error}</p>}
     </div>

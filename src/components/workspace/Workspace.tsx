@@ -98,7 +98,7 @@ function problemFrom(error: unknown): SaveProblem {
   return { message: errorMessage(error), fields: {}, invalidCells: [] };
 }
 
-export function Workspace({ projectId, univerLicense }: { projectId: string; univerLicense: string }) {
+export function Workspace({ projectId, univerLicense, excelExportAvailable }: { projectId: string; univerLicense: string; excelExportAvailable: boolean }) {
   const [load, setLoad] = useState<LoadState>({ status: 'loading' });
   const [project, setProject] = useState<Project | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -762,7 +762,7 @@ export function Workspace({ projectId, univerLicense }: { projectId: string; uni
               <ScenarioTools key={active.id} adapter={adapter} projectId={project.id} scenarioId={active.id}
                 revision={project.revision} loading={sheetLoading || saving} dirty={dirty} readOnly={readOnly}
                 valid={Boolean(live && live.errors.length === 0 && live.issues.length === 0)}
-                chartCount={adapter?.getChartCount() ?? 0} />
+                chartCount={adapter?.getChartCount() ?? 0} excelExportAvailable={excelExportAvailable} />
               <div className="sheet-scroll">
                 <div className="sheet-host">
                   {editorError ? (

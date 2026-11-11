@@ -12,5 +12,5 @@ export const metadata = { title: 'Project' };
 export default async function ProjectPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
   const univerLicense = process.env.UNIVER_LICENSE?.trim() ?? '';
-  return <Workspace projectId={projectId} univerLicense={univerLicense} />;
+  return <Workspace projectId={projectId} univerLicense={univerLicense} excelExportAvailable={Boolean(process.env.UNIVER_EXPORT_URL?.trim() && process.env.UNIVER_EXPORT_TOKEN?.trim())} />;
 }

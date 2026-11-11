@@ -21,7 +21,6 @@
     "@electric-sql/pglite": "0.5.15",
     "@univerjs-pro/chart-ui": "1.4.0",
     "@univerjs-pro/engine-chart": "1.4.0",
-    "@univerjs-pro/exchange-node": "1.4.0",
     "@univerjs-pro/license": "1.4.0",
     "@univerjs-pro/sheets-chart": "1.4.0",
     "@univerjs-pro/sheets-chart-ui": "1.4.0",
