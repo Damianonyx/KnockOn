@@ -803,7 +803,7 @@ export function Workspace({ projectId, univerLicense, excelExportAvailable }: { 
           </div>
 
           <ComparisonView project={project} inspect={inspect} dirty={dirty} onInspect={(t) => setInspect(t)} />
-          <AnalysisView project={project} activeScenarioId={active.id} dirty={dirty} />
+          <AnalysisView project={project} activeScenarioId={active.id} dirty={dirty} excelExportAvailable={excelExportAvailable} />
         </main>
       </div>
 

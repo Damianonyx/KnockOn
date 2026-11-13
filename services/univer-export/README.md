@@ -2,7 +2,9 @@
 
 The main app stays on Vercel. This small private Node service turns a saved Univer workbook into an Excel file. It needs persistent local storage for Univer's license-usage state, including with an unlimited license. A Vercel Function does not provide that storage.
 
-Charts and worksheet printing do not need this service. Until it is hosted and connected, KnockOn disables **Export Excel** and displays an unavailable message.
+Charts and worksheet printing do not need this service. Until it is hosted and connected, KnockOn disables **Export Excel** and **Export analysis Excel** and displays an unavailable message. Analysis PDF printing still works.
+
+The converter supports both saved scenario workbooks and multi-sheet analysis reports. Existing installations must redeploy this version for reports; older versions reject more than one worksheet. Run `docker compose up -d --build` with the existing persistent volume intact. Reports include an embedded chart and supporting formula sheets.
 
 ## Run with Docker
 

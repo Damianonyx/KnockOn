@@ -53,3 +53,15 @@ test('keeps license diagnostics private and returns unavailable without a retry'
   assert.deepEqual(await result.json(), { error: { code: 'EXPORT_UNAVAILABLE' } });
   assert.equal(calls, 1);
 });
+
+test('accepts report workbooks and rejects missing or duplicate worksheet references', async (t) => {
+  let calls = 0;
+  const report = { id: 'analysis', sheetOrder: ['report', 'analysis_0'], sheets: { report: {}, analysis_0: {} } };
+  const post = await fixture(t, async (value) => { calls++; assert.deepEqual(value, report); return Buffer.from('PK-report'); });
+  assert.equal((await post({ workbook: { ...report, sheetOrder: ['report', 'missing'] } })).status, 400);
+  assert.equal((await post({ workbook: { ...report, sheetOrder: ['report', 'report'] } })).status, 400);
+  assert.equal((await post({ workbook: { ...report, sheetOrder: [] } })).status, 400);
+  assert.equal(calls, 0);
+  assert.equal((await post({ workbook: report })).status, 200);
+  assert.equal(calls, 1);
+});

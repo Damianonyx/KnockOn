@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { ScenarioKind } from './project';
+import type { ScenarioKind, WorkbookSnapshot } from './project';
 import type { BakeryInputKey } from '@/lib/templates/bakery';
 
 export const analysisRequestSchema = z.object({
@@ -8,6 +8,19 @@ export const analysisRequestSchema = z.object({
   maxUnits: z.number().int().min(1).max(1_000_000_000),
 }).refine((r) => r.maxUnits > r.minUnits, { path: ['maxUnits'], message: 'Maximum sales must be greater than minimum sales.' });
 export type AnalysisRequest = z.infer<typeof analysisRequestSchema>;
+
+export const analysisReportRequestSchema = analysisRequestSchema.safeExtend({ scenarioId: z.string().min(1) }).strict();
+export type AnalysisReportRequest = z.infer<typeof analysisReportRequestSchema>;
+
+export interface AnalysisReport {
+  projectId: string;
+  projectName: string;
+  scenarioName: string;
+  projectRevision: number;
+  minUnits: number;
+  maxUnits: number;
+  workbook: WorkbookSnapshot;
+}
 
 export interface SensitivityPoint {
   units: number;

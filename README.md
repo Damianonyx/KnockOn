@@ -80,7 +80,9 @@ Below **Compare**, enter **Minimum monthly sales (units)** and **Maximum monthly
 
 These are hypothetical sales, not a demand forecast. Price, ingredient cost per unit and monthly overheads stay fixed within each scenario. The model does not infer changes in energy usage, production capacity or customer behaviour.
 
-The analysis uses saved inputs in a separate, temporary Univer workbook. It never changes the baseline, workbooks, assumptions or revision. Unsaved edits are excluded. A new saved revision or a changed range hides the old results until analysis is run again. The view is not included in worksheet printing or Excel downloads; those still contain the saved scenario workbook.
+The analysis uses saved inputs in a separate, temporary Univer workbook. It never changes the baseline, workbooks, assumptions or revision. Unsaved edits are excluded. A new saved revision or a changed range hides the old results until analysis is run again.
+
+After running analysis, choose **Print analysis / PDF** or **Export analysis Excel**. The report contains all scenario thresholds, the selected scenario's sensitivity table and chart, baseline comparison, source inputs, recorded assumptions, currency and saved revision. Printing opens a separate read-only tab with Univer's print preview; select **NEXT**, then your browser's **Save as PDF** or printer. Excel includes the report, an embedded Univer chart, and supporting sheets with working formulas. It uses the existing private conversion service; if that service is not configured, Excel remains unavailable while printing still works. The worksheet toolbar continues to export the saved scenario itself.
 
 No extra service, API key or Pro license is needed for these calculations. The sensitivity chart is application-rendered from Univer results, like the existing comparison chart. Ling's existing saved-scenario explanation feature is unchanged.
 
@@ -120,6 +122,8 @@ flowchart TD
   | `POST /api/projects/:id/scenarios/:sid/explanation` | Ask Ling to explain a saved scenario |
   | `POST /api/projects/:id/scenarios/:sid/export` | Download a saved scenario as `.xlsx`, with an expected revision |
   | `POST /api/projects/:id/analysis` | Read-only break-even and sales sensitivity from a saved revision |
+  | `POST /api/projects/:id/analysis/report` | Build a private, revision-checked report workbook for printing |
+  | `POST /api/projects/:id/analysis/export` | Download the analysis report as `.xlsx`, including formulas and chart |
 
 ## Univer
 
@@ -198,6 +202,7 @@ Without a database URL, data is stored in an embedded Postgres in `./data/pglite
 | The whole interface in a real browser, including a phone layout | `npm run e2e` |
 | Licensed charts, print preview, Excel download and export access checks | `npm run e2e:pro` |
 | Break-even and sales sensitivity in a real browser, including stale results and a phone layout | `npm run e2e:analysis` |
+| Analysis print preview, PDF handoff and licensed Excel report download | `npm run e2e:analysis-export` |
 
 ## Limits
 

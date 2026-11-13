@@ -54,7 +54,7 @@ import {
   RemoveSheetsChartMutation, UniverSheetsChartPlugin,
 } from '@univerjs-pro/sheets-chart';
 import { UniverSheetsChartUIPlugin } from '@univerjs-pro/sheets-chart-ui';
-import { SheetPrintOpenOperation, UniverSheetsPrintPlugin } from '@univerjs-pro/sheets-print';
+import { ISheetPrintManagerService, SheetPrintOpenOperation, UniverSheetsPrintPlugin } from '@univerjs-pro/sheets-print';
 import '@univerjs/sheets/facade';
 import '@univerjs/sheets-ui/facade';
 import '@univerjs-pro/sheets-chart/facade';
@@ -133,6 +133,8 @@ function isFormulaResultWrite(options?: IExecutionOptions): boolean {
 
 export interface BrowserAdapterOptions {
   container: HTMLElement;
+  /** A separate report viewer preserves its layout and never accepts edits. */
+  report?: boolean;
   /** Contents of UNIVER_LICENSE (license.txt). Only this value reaches the browser. */
   license?: string;
 }
@@ -172,9 +174,12 @@ export class BrowserWorkbookAdapter implements IWorkbookAdapter {
   private loading = false;
   private readOnly = false;
   private disposed = false;
+  private readonly report: boolean;
 
   constructor(options: BrowserAdapterOptions) {
     this.container = options.container;
+    this.report = Boolean(options.report);
+    this.readOnly = this.report;
     this.univer = new Univer({
       theme: defaultTheme,
       locale: LocaleType.EN_US,
@@ -242,7 +247,7 @@ export class BrowserWorkbookAdapter implements IWorkbookAdapter {
   private guard(info: ICommandInfo, options?: IExecutionOptions): void {
     if (this.loading || !this.unit || isFormulaResultWrite(options)) return;
     if (this.readOnly && CHART_MUTATIONS.has(info.id)) {
-      this.block('This baseline is read-only because other scenarios are compared against it.');
+      this.block(this.report ? 'This report is read-only.' : 'This baseline is read-only because other scenarios are compared against it.');
     }
     if (info.type === CommandType.COMMAND && BLOCKED_COMMAND.test(info.id)) {
       this.block('The bakery layout is fixed in this version. Only the input cells B2:B9 can be edited.');
@@ -251,7 +256,7 @@ export class BrowserWorkbookAdapter implements IWorkbookAdapter {
     const params = info.params as ISetRangeValuesParams | undefined;
     if (!params || params.unitId !== this.unit.getUnitId()) return;
     if (this.readOnly) {
-      this.block('This baseline is read-only because other scenarios are compared against it.');
+      this.block(this.report ? 'This report is read-only.' : 'This baseline is read-only because other scenarios are compared against it.');
     }
     for (const [row, cols] of Object.entries(params.cellValue ?? {})) {
       for (const [col, cell] of Object.entries(cols ?? {})) {
@@ -277,7 +282,8 @@ export class BrowserWorkbookAdapter implements IWorkbookAdapter {
         this.instances.disposeUnit(this.unit.getUnitId());
         this.unit = null;
       }
-      const data = decorate(structuredClone(workbook) as BakeryWorkbook, this.container.clientWidth) as unknown as Partial<IWorkbookData>;
+      const copy = structuredClone(workbook) as BakeryWorkbook;
+      const data = (this.report ? copy : decorate(copy, this.container.clientWidth)) as unknown as Partial<IWorkbookData>;
       this.unit = this.univer.createUnit<Partial<IWorkbookData>, Workbook>(UniverInstanceType.UNIVER_SHEET, data);
       await this.commands.executeCommand(
         SetTriggerFormulaCalculationStartMutation.id,
@@ -287,14 +293,14 @@ export class BrowserWorkbookAdapter implements IWorkbookAdapter {
       await this.waitForRecalculation();
       // Presentation-only fit for charts saved on a wider screen; input values and sources stay unchanged.
       const chartWidth = Math.max(240, Math.min(580, this.container.clientWidth - 70));
-      for (const chart of this.api.getActiveWorkbook()?.getActiveSheet().getCharts() ?? []) chart.setSize(chartWidth, 290);
+      if (!this.report) for (const chart of this.api.getActiveWorkbook()?.getActiveSheet().getCharts() ?? []) chart.setSize(chartWidth, 290);
     } finally {
       this.loading = false;
     }
   }
 
   setReadOnly(readOnly: boolean): void {
-    this.readOnly = readOnly;
+    this.readOnly = this.report || readOnly;
   }
 
   dispose(): void {
@@ -311,7 +317,7 @@ export class BrowserWorkbookAdapter implements IWorkbookAdapter {
   private snapshot(): BakeryWorkbook {
     if (!this.unit) throw new Error('No workbook loaded.');
     const snap = this.api.getWorkbook(this.unit.getUnitId())!.save() as unknown as BakeryWorkbook;
-    snap.sheetOrder = [BAKERY_SHEET_ID];
+    if (!this.report) snap.sheetOrder = [BAKERY_SHEET_ID];
     return snap;
   }
 
@@ -407,6 +413,17 @@ export class BrowserWorkbookAdapter implements IWorkbookAdapter {
     // Use the exported operation through the async command API so errors are awaited correctly.
     const opened = await this.commands.executeCommand(SheetPrintOpenOperation.id);
     if (!opened) throw new Error('Print preview could not open. Please try again.');
+    if (this.report) {
+      const manager = (this.univer as unknown as InjectorAccess).__getInjector().get<ISheetPrintManagerService>(ISheetPrintManagerService);
+      manager.updateLayoutConfig({
+        area: this.api.Enum.PrintArea.CurrentSheet,
+        subUnitIds: [workbook.getActiveSheet().getSheetId()],
+        paperSize: this.api.Enum.PrintPaperSize.A4,
+        direction: this.api.Enum.PrintDirection.Landscape,
+        scale: this.api.Enum.PrintScale.FitWidth,
+      });
+      manager.updateRenderConfig({ gridlines: false });
+    }
   }
 
   inspectResult(key: BakeryResultKey): ResultInspection {

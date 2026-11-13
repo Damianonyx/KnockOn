@@ -328,7 +328,9 @@ export default function DocsPage() {
               <p>Each saved scenario shows the minimum whole units needed to cover costs. With a positive contribution per unit, divide monthly overheads by unit price minus ingredient cost per unit, then round up. The app explains cases where sales cannot cover costs, or where zero overheads produce a special case.</p>
               <p>Select a scenario to see profit across up to eleven sales volumes, alongside a dashed baseline. The table shows exact revenue, costs and profit. Select a chart point or profit value, or <b>Inspect break-even</b>, to see the formulas and saved inputs.</p>
               <p>Sales are hypothetical, not a demand forecast. Unit price, ingredient cost per unit and monthly overheads stay fixed. The model does not automatically change energy usage or production capacity as sales change.</p>
-              <p>Univer calculates the separate analysis from your saved inputs. It leaves the baseline and your sales assumptions unchanged. Unsaved edits are excluded; after a save or range change, run analysis again. These results are not included in the worksheet print preview or Excel export.</p>
+              <p>Univer calculates the separate analysis from your saved inputs. It leaves the baseline and your sales assumptions unchanged. Unsaved edits are excluded; after a save or range change, run analysis again.</p>
+              <p>Select <b>Print analysis / PDF</b> to open a separate report in Univer&apos;s print preview. Select <b>NEXT</b>, then choose Save as PDF or a printer in your browser. <b>Export analysis Excel</b> downloads the report with formulas, supporting sheets and an embedded chart when the Excel service is available.</p>
+              <p>The report includes all scenario thresholds, the selected scenario&apos;s sensitivity chart and table, baseline comparison, source inputs, recorded assumptions, currency and saved revision. The worksheet toolbar still prints or exports the scenario worksheet itself.</p>
             </section>
 
             <section id="explain" aria-labelledby="explain-h">

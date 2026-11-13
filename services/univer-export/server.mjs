@@ -54,7 +54,9 @@ export function createExportServer({ token, convert, logger = console.error }) {
       const body = await readBody(request);
       const workbook = body?.workbook;
       if (!workbook || typeof workbook !== 'object' || typeof workbook.id !== 'string' ||
-          !Array.isArray(workbook.sheetOrder) || workbook.sheetOrder.length !== 1 || !workbook.sheets ||
+          !Array.isArray(workbook.sheetOrder) || workbook.sheetOrder.length === 0 || !workbook.sheets ||
+          new Set(workbook.sheetOrder).size !== workbook.sheetOrder.length ||
+          workbook.sheetOrder.some((id) => typeof id !== 'string' || !Object.hasOwn(workbook.sheets, id) || !workbook.sheets[id] || typeof workbook.sheets[id] !== 'object') ||
           Object.keys(body).some((key) => key !== 'workbook')) return json(400, 'INVALID_WORKBOOK');
       const buffer = await convert(workbook);
       response.writeHead(200, { 'Content-Type': XLSX, 'Content-Length': buffer.length, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
