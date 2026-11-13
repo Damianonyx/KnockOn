@@ -16,6 +16,7 @@ import type {
   UpdateScenarioRequest,
 } from '@/lib/contracts/project';
 import type { TemplateDescriptor } from '@/lib/templates';
+import type { AnalysisRequest, ProjectAnalysis } from '@/lib/contracts/analysis';
 
 export class ApiClientError extends Error {
   constructor(
@@ -89,6 +90,8 @@ async function request<T>(method: string, path: string, body?: unknown, timeoutM
 }
 
 export const api = {
+  analyse: (projectId: string, body: AnalysisRequest) =>
+    request<ProjectAnalysis>('POST', `/api/projects/${encodeURIComponent(projectId)}/analysis`, body),
   listTemplates: () => request<TemplateDescriptor[]>('GET', '/api/templates'),
   listProjects: () => request<ProjectSummary[]>('GET', '/api/projects'),
   createProject: (body: CreateProjectRequest) => request<Project>('POST', '/api/projects', body),

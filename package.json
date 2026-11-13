@@ -15,7 +15,8 @@
     "test": "node --disable-warning=ExperimentalWarning --import tsx --test \"tests/**/*.test.ts\"",
     "smoke:api": "node scripts/smoke-api.mjs",
     "e2e": "node scripts/e2e.mjs",
-    "e2e:pro": "node scripts/e2e-pro.mjs"
+    "e2e:pro": "node scripts/e2e-pro.mjs",
+    "e2e:analysis": "node scripts/e2e-analysis.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.15",

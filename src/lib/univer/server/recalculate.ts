@@ -68,6 +68,13 @@ export async function recalculateWorkbook(snapshot: unknown): Promise<Recalculat
   // Persist supported chart resources only, not arbitrary drawing/OLE or permission plugins submitted by a client.
   if (Array.isArray(input.resources)) input.resources = input.resources.filter((r) => [CHART_RESOURCE, DRAWING_RESOURCE].includes(r.name));
 
+  const workbook = await calculateTrustedWorkbook(input);
+  workbook.sheetOrder = [BAKERY_SHEET_ID];
+  return { workbook, projection: readBakeryProjection(workbook) };
+}
+
+/** Internal engine boundary. Callers must validate user snapshots or construct all cells themselves. */
+export async function calculateTrustedWorkbook(input: BakeryWorkbook): Promise<BakeryWorkbook> {
   // A fresh instance per calculation keeps requests isolated (no shared unit
   // ids or state between users) and is fast enough for the bakery template.
   const univer = new Univer({ logLevel: LogLevel.SILENT, locale: LocaleType.EN_US, locales: { [LocaleType.EN_US]: mergeLocales(EngineChartEnUS, SheetsChartEnUS) } });
@@ -95,8 +102,7 @@ export async function recalculateWorkbook(snapshot: unknown): Promise<Recalculat
 
     // Facade save includes plugin resources; Workbook.getSnapshot() alone loses chart models and anchors.
     const workbook = FUniver.newAPI(univer).getWorkbook(unit.getUnitId())!.save() as unknown as BakeryWorkbook;
-    workbook.sheetOrder = [BAKERY_SHEET_ID];
-    return { workbook, projection: readBakeryProjection(workbook) };
+    return workbook;
   } finally {
     univer.dispose();
   }

@@ -35,6 +35,7 @@ import { AppHeader } from '@/components/ui/AppHeader';
 import { Dialog } from '@/components/ui/Dialog';
 import { KnockyPose } from '@/components/ui/KnockyPose';
 import { ComparisonView } from './ComparisonView';
+import { AnalysisView } from './AnalysisView';
 import { ForkDialog, type ForkSpec } from './ForkDialog';
 import { InputsPanel } from './InputsPanel';
 import { ExplainPanel, type ExplainState } from './ExplainPanel';
@@ -657,6 +658,7 @@ export function Workspace({ projectId, univerLicense, excelExportAvailable }: { 
           <button type="button" className="btn btn-sm next-step" onClick={() => requestFork(nextStep.kind, nextStep.sourceId)}>
             {nextStep.label}
           </button>
+          <a href="#analysis" className="btn btn-sm">Break-even &amp; sensitivity</a>
           <div className="row small" style={{ marginTop: 'auto', justifyContent: 'space-between' }}>
             <Link href="/projects">← All projects</Link>
             {/* A new tab, so reading the docs never interrupts unsaved work. */}
@@ -801,6 +803,7 @@ export function Workspace({ projectId, univerLicense, excelExportAvailable }: { 
           </div>
 
           <ComparisonView project={project} inspect={inspect} dirty={dirty} onInspect={(t) => setInspect(t)} />
+          <AnalysisView project={project} activeScenarioId={active.id} dirty={dirty} />
         </main>
       </div>
 

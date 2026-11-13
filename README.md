@@ -71,6 +71,19 @@ The name comes from a knock-on effect: one change causes consequences elsewhere.
 
 The same guide, with the model's inputs and formulas, is built into the app at [knockon.tech/docs](https://www.knockon.tech/docs).
 
+## Break-even and sales sensitivity
+
+Below **Compare**, enter **Minimum monthly sales (units)** and **Maximum monthly sales (units)**, then select **Run analysis**. The range must use whole units between 0 and 1,000,000,000, with maximum greater than minimum.
+
+- **Break-even:** each saved scenario shows the minimum whole units needed to cover the modelled costs. With a positive contribution per unit, Univer divides monthly overheads by the difference between unit price and ingredient cost, then rounds up. Zero and negative contribution have explicit states, including when no sales volume can cover costs.
+- **Sales sensitivity:** select a scenario to see profit across up to eleven sampled sales volumes, with the baseline as a dashed comparison. A table provides exact units, revenue, total costs and profit. Select a point or profit value, or **Inspect break-even**, to see the formulas and inputs.
+
+These are hypothetical sales, not a demand forecast. Price, ingredient cost per unit and monthly overheads stay fixed within each scenario. The model does not infer changes in energy usage, production capacity or customer behaviour.
+
+The analysis uses saved inputs in a separate, temporary Univer workbook. It never changes the baseline, workbooks, assumptions or revision. Unsaved edits are excluded. A new saved revision or a changed range hides the old results until analysis is run again. The view is not included in worksheet printing or Excel downloads; those still contain the saved scenario workbook.
+
+No extra service, API key or Pro license is needed for these calculations. The sensitivity chart is application-rendered from Univer results, like the existing comparison chart. Ling's existing saved-scenario explanation feature is unchanged.
+
 ## How it works
 
 ```mermaid
@@ -106,6 +119,7 @@ flowchart TD
   | `PUT /api/projects/:id/scenarios/:sid` | Save a scenario |
   | `POST /api/projects/:id/scenarios/:sid/explanation` | Ask Ling to explain a saved scenario |
   | `POST /api/projects/:id/scenarios/:sid/export` | Download a saved scenario as `.xlsx`, with an expected revision |
+  | `POST /api/projects/:id/analysis` | Read-only break-even and sales sensitivity from a saved revision |
 
 ## Univer
 
