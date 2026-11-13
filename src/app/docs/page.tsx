@@ -22,6 +22,7 @@ const SECTIONS = [
   { id: 'share', title: 'Charts, printing and Excel' },
   { id: 'example', title: 'A worked example' },
   { id: 'compare', title: 'Compare and inspect' },
+  { id: 'analysis', title: 'Break-even and sales sensitivity' },
   { id: 'explain', title: 'Explain' },
   { id: 'saving', title: 'Saving' },
   { id: 'privacy', title: 'Privacy and your data' },
@@ -319,6 +320,15 @@ export default function DocsPage() {
                 To <b>inspect</b> a result, select it: a card above the spreadsheet, a figure in Compare, or a result
                 cell in the sheet. KnockOn shows the formula and every input behind it, with their cells.
               </p>
+            </section>
+
+            <section id="analysis" aria-labelledby="analysis-h">
+              <h2 id="analysis-h">Break-even and sales sensitivity</h2>
+              <p>Below <b>Compare</b>, enter <b>Minimum monthly sales (units)</b> and <b>Maximum monthly sales (units)</b>, then select <b>Run analysis</b>. Use whole units from 0 to 1,000,000,000, with maximum greater than minimum.</p>
+              <p>Each saved scenario shows the minimum whole units needed to cover costs. With a positive contribution per unit, divide monthly overheads by unit price minus ingredient cost per unit, then round up. The app explains cases where sales cannot cover costs, or where zero overheads produce a special case.</p>
+              <p>Select a scenario to see profit across up to eleven sales volumes, alongside a dashed baseline. The table shows exact revenue, costs and profit. Select a chart point or profit value, or <b>Inspect break-even</b>, to see the formulas and saved inputs.</p>
+              <p>Sales are hypothetical, not a demand forecast. Unit price, ingredient cost per unit and monthly overheads stay fixed. The model does not automatically change energy usage or production capacity as sales change.</p>
+              <p>Univer calculates the separate analysis from your saved inputs. It leaves the baseline and your sales assumptions unchanged. Unsaved edits are excluded; after a save or range change, run analysis again. These results are not included in the worksheet print preview or Excel export.</p>
             </section>
 
             <section id="explain" aria-labelledby="explain-h">

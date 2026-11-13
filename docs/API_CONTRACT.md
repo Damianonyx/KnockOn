@@ -86,12 +86,13 @@ All endpoints use JSON. Success responses use `{ "data": ... }`. Define the corr
 | `POST /api/projects/:projectId/scenarios` | `{ expectedRevision, sourceScenarioId, kind: "shock" \| "response", name }` | 201: updated project including the new fork and incremented revision |
 | `PUT /api/projects/:projectId/scenarios/:scenarioId` | `{ expectedRevision, name, notes, workbook, assumptions }` | 200: updated project with recalculated scenario and incremented revision |
 | `POST /api/projects/:projectId/scenarios/:scenarioId/explanation` | `{ expectedRevision, question? }` | 200: `{ projectId, scenarioId, projectRevision, model, explanation, generatedAt, changedInputs }` |
+| `POST /api/projects/:projectId/analysis` | `{ expectedRevision, minUnits, maxUnits }` | 200: `{ projectId, projectRevision, minUnits, maxUnits, scenarios }`, read-only (see "Break-even and sales sensitivity") |
 
 The blank template starts with zero-valued inputs and zero totals, with no business assumptions inferred. The UI must state that figures have not yet been entered. Demo mode loads the fictional fixture and visibly marks it as demo data.
 
 For each mutation, validate the project/scenario relationship, expected revision, template, input data, and relevant assumptions. Save a mutation and its revision increment atomically. A fork uses the persisted source, so the UI must save any source draft first. Creating the first shock atomically freezes the baseline. Reject writes to a frozen baseline.
 
-Do not add a separate calculations endpoint or accept independent metric fields for this milestone. Comparisons use returned scenario metrics; display profit change by comparing those saved values. Naming rules and reasonable payload limits should be implemented consistently in shared schemas and documented with the scaffold.
+Do not add a separate calculations endpoint or accept independent metric fields for scenario saves. The one exception is the read-only analysis endpoint below, which accepts only a sales range, calculates from saved inputs and writes nothing. Comparisons use returned scenario metrics; display profit change by comparing those saved values. Naming rules and reasonable payload limits should be implemented consistently in shared schemas and documented with the scaffold.
 
 Implemented limits: project and scenario names are 1–80 characters after trimming; notes are up to 5000 characters; assumption notes up to 2000; currency is three letters and is upper-cased; request bodies are limited to 1 MB.
 
@@ -129,6 +130,36 @@ For a revision conflict, return `currentRevision` in the error object. Preserve 
 ## Explanations
 
 KnockOn uses AntLing's Ling 3.2 Flash (`ANTLING_MODEL`, default `Ling-3.2-flash`) for explanations. The explanation endpoint only describes the current saved revision: send the `expectedRevision` you are showing, and a newer revision returns 409 `REVISION_CONFLICT`. The server sends Ling the saved inputs, formulas, Univer-calculated results, inputs changed from the parent, profit change against the baseline, assumptions with their source and confirmation, and the template simplifications. Explanations are not stored; the UI treats one as stale once the project revision changes. `changedInputs` lists inputs that differ from the parent scenario, so the UI can show what the explanation refers to without relying on Ling. The key stays on the server, and the spreadsheet remains fully usable when Ling is unavailable.
+
+## Break-even and sales sensitivity
+
+`POST /api/projects/:projectId/analysis` accepts `{ "expectedRevision": 3, "minUnits": 500, "maxUnits": 1500 }`. `minUnits` and `maxUnits` are whole numbers from 0 to 1,000,000,000, and `maxUnits` must be greater than `minUnits`; anything else returns 400 `BAD_REQUEST`. Ownership is checked first: unknown or unowned projects return 404. An outdated `expectedRevision` returns 409 `REVISION_CONFLICT` with `currentRevision`. The revision is checked again after calculation, so a save that lands while Univer is calculating also returns 409 instead of a result that looks current. Saved inputs that cannot be calculated return 422 `CALCULATION_ERROR`. The response uses `Cache-Control: no-store`.
+
+The endpoint never writes: workbooks, assumptions, charts, saved results, the frozen baseline and the revision are unchanged. For each saved scenario, the server validates the stored workbook, reads its eight inputs (B2:B9) and builds one sheet of a temporary workbook that a fresh headless Univer instance calculates. Cached results and chart resources are not copied. The temporary sheet repeats the model formulas and adds analysis-only cells, which are never saved to a scenario:
+
+| Cell | Meaning | Formula |
+| --- | --- | --- |
+| E2, E3 | Chosen range | `minUnits`, `maxUnits` |
+| B13 | Monthly overheads | `=SUM(B5:B9)` |
+| B18 | Contribution per unit | `=ROUND(B3-B4,9)` |
+| B19 | Minimum whole units to cover costs | `=IF(B18>0,ROUNDUP(ROUND(B13/B18,6),0),IF(B13=0,0,""))` |
+| A24… | Sampled units, row *i* of *steps* | `=ROUND($E$2+($E$3-$E$2)*i/steps,0)` |
+| B24… | Revenue | `=A24*$B$3` |
+| C24… | Total costs | `=A24*$B$4+$B$13` |
+| D24… | Profit | `=B24-C24` |
+
+`steps` is `min(10, maxUnits - minUnits)`, giving at most eleven samples that include both endpoints, and every whole unit for ranges under ten. The two `ROUND` calls in B18 and B19 remove binary floating-point noise, so an exact threshold is not rounded up by one (for example 15 / (4.35 − 4.05) is 50, not 51). A quotient within a millionth of a whole unit is treated as that whole unit.
+
+Each entry in `scenarios` (ordered as in the scenario list) has `scenarioId`, `name`, `kind`, `inputs`, `fixedCosts` (B13), `contributionPerUnit` (B18), `breakEvenUnits` (B19, or `null` when no volume covers costs), `breakEvenStatus` and `points` (`{ units, revenue, totalCosts, profit, row }`, where `row` is the sample's row in the analysis sheet). `breakEvenStatus` is a label derived from the signs of B18 and B13, not a calculation:
+
+| Status | When | `breakEvenUnits` |
+| --- | --- | --- |
+| `attainable` | Contribution above zero | Threshold; 0 when overheads are zero |
+| `unreachable` | Contribution zero or negative, overheads above zero | `null` |
+| `any-volume` | Contribution and overheads both zero | 0 |
+| `zero-sales-only` | Contribution negative, overheads zero | 0 |
+
+The client shows results only while the response's `projectRevision`, `minUnits` and `maxUnits` match the saved revision and the entered range. Unsaved edits are excluded. The sensitivity chart is drawn by the application from these Univer results; it is not a worksheet chart and is not part of printing or Excel export. Figures are IEEE double-precision numbers, so results above about 9,000,000,000,000,000 lose pence-level precision.
 
 ## Charts and Excel downloads
 
