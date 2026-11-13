@@ -67,3 +67,19 @@ For local verification, the existing converter container's `server.mjs` was upda
 ## Finish
 
 Review and fix the remaining issues, record exactly which checks were possible, then open a PR against main. Keep it WIP until the browser/PDF checks pass. Do not merge, publish a post or claim the additions are live without the owner's release instruction and deployment verification.
+
+## Continuation review (Claude, 13 November 2026)
+
+Findings and fixes on this branch after checkpoint `77aac4c`:
+
+- **Blank PDFs were a test artefact.** Serialising the DOM lost canvas pixels, and even with canvases copied to images they were transparent when `window.print` ran. The test now holds Univer's print pages in place and renders the live page with `page.pdf()`, which matches what a browser's Save as PDF produces. Real pages come out: 4 A4 landscape pages.
+- **The reopen "overlay" was a test artefact.** Univer removes its print pages and closes the preview on the browser's `afterprint` event. The mocked `window.print` never fired it, so the preview (and its "Printing, please do not close the page" toast) stayed open over the page. The mock now fires `afterprint`; reopening works after printing and after cancelling, on a phone too.
+- **Charts do not print in Univer 1.4.0.** The preview draws a worksheet chart only after a re-render, and the pages sent to print contain only the chart's empty frame, however long print waits, and on a second print too. The existing scenario worksheet print on main has the same problem. `IPrintPreparationService` is not registered for sheet printing, and the chart facade has no image export. Decision for review: the printable report (`/analysis/report`) is built without the chart and says the Excel download adds it; the table holds the same figures. `/analysis/export` keeps the chart. Alternatives if a printed chart is required: an application-rendered HTML/SVG print view, or waiting for a Univer fix.
+- **Readability:** long notes wrap at word boundaries (`wrapWords`), row heights are tighter (5 pages became 4), the range shows thousands separators and the "Period / unit" column is centred.
+- **Test race fixed:** adding a shock is a fork plus a save (two revisions); the test now waits for the saved energy figure before reading the revision.
+- **Known test-only error:** `page.pdf()` lays out the live page with print media, so a Univer UI list's ResizeObserver can fire after the preview closes ("reading 'clientWidth'"). Real printing uses a separate print document. The test tolerates exactly that error, only during capture.
+
+Checks run here: `npm test` 61/61, converter tests 4/4, typecheck, build, `e2e:analysis-export` (8/8, three consecutive runs, `E2E_EXPORT_UNAVAILABLE=1`), `e2e:analysis` 10/10, `e2e` 44/44, `smoke:api`. This session had a Univer license but no converter, so the licensed Excel download was not re-run; Codex's inspection above stands.
+
+Remaining limitations: printed numbers have no currency symbol or thousands separators (the browser editor has no number-format plugin; Excel shows the formats); a table can split across pages; Univer's print preview on a phone shows the settings panel but no page thumbnails (printing still produces all pages).
+

@@ -9,30 +9,41 @@ const dir = 'verify-results/analysis-export';
 fs.mkdirSync(dir, { recursive: true });
 const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_PATH || undefined });
 const context = await browser.newContext({ viewport: { width: 1440, height: 1050 } });
-let printHtml = '';
 let printDone;
-const printed = new Promise((resolve) => { printDone = resolve; });
-await context.exposeBinding('recordAnalysisPrint', (_source, html) => { printHtml = html; printDone(); });
-await context.addInitScript(() => { window.print = () => {
-  // Native printing captures canvas pixels. Serialising outerHTML alone loses them;
-  // replace canvases in a detached copy for the standalone PDF verification artifact.
-  const copy = document.documentElement.cloneNode(true);
-  const originals = document.querySelectorAll('canvas');
-  copy.querySelectorAll('canvas').forEach((canvas, index) => {
-    const img = document.createElement('img');
-    img.src = originals[index].toDataURL();
-    img.width = originals[index].width; img.height = originals[index].height;
-    img.setAttribute('style', canvas.getAttribute('style') || '');
-    canvas.replaceWith(img);
+let printed = new Promise((resolve) => { printDone = resolve; });
+await context.exposeBinding('recordAnalysisPrint', () => printDone());
+// Native printing captures Univer's print pages while window.print blocks. A mocked
+// print returns at once, so keep Univer's print pages in the DOM until the test has
+// rendered the live page to PDF, then fire afterprint as a browser does after its
+// dialog closes. Serialising the DOM instead loses canvas pixels.
+await context.addInitScript(() => {
+  window.__holdPrint = false;
+  const held = (node) => window.__holdPrint && node?.nodeType === 1
+    && (node.classList.contains('printing-canvas-container') || node.classList.contains('offline-printing-css'));
+  const removeChild = Node.prototype.removeChild;
+  Node.prototype.removeChild = function (node) { return held(node) ? node : removeChild.call(this, node); };
+  const remove = Element.prototype.remove;
+  Element.prototype.remove = function () { return held(this) ? undefined : remove.call(this); };
+  window.print = () => { window.__holdPrint = true; void window.recordAnalysisPrint(); };
+});
+async function finishPrint(target) {
+  await target.evaluate(() => {
+    // Univer's own afterprint handler removes its print pages and closes the preview.
+    window.__holdPrint = false;
+    window.dispatchEvent(new Event('afterprint'));
   });
-  const baseTag = document.createElement('base'); baseTag.href = location.href;
-  copy.querySelector('head')?.prepend(baseTag);
-  void window.recordAnalysisPrint(copy.outerHTML);
-}; });
+  printed = new Promise((resolve) => { printDone = resolve; });
+}
 const errors = [];
-context.on('page', (p) => p.on('pageerror', (e) => errors.push(e.message)));
+// page.pdf() lays out the live page with print media (a real print uses a separate
+// print document), so Univer's preview list sees a resize and its ResizeObserver can
+// fire after the preview closes. Tolerate exactly that error, only while capturing.
+let capturingPdf = false;
+const captureArtifact = (e) => capturingPdf && /reading 'clientWidth'/.test(e.message) && /ResizeObserver/.test(e.stack || '');
+context.on('page', (p) => p.on('pageerror', (e) => { if (!captureArtifact(e)) errors.push(`[after: ${stage}] ${p.url().replace(base, '').split('?')[0]}: ${e.message}\n${(e.stack || '').split('\n').slice(1, 4).join('\n')}`); }));
 const page = await context.newPage();
-const pass = (message) => console.log(`PASS ${message}`);
+let stage = 'start';
+const pass = (message) => { console.log(`PASS ${message}`); stage = message; };
 try {
   await page.goto(`${base}/projects`);
   await page.getByLabel('Project name').fill('Export verification');
@@ -48,8 +59,17 @@ try {
   const projectId = new URL(page.url()).pathname.split('/').pop();
   const apiUrl = `${base}/api/projects/${projectId}`;
   const saved = async () => (await (await page.request.get(apiUrl)).json()).data;
-  const before = await saved();
+  // Adding a shock is a fork (one revision) then a save of the new energy cost (another).
+  // Wait for the second so the test never races the app's own save.
+  await page.waitForSelector('.save-btn[data-state="saved"]', { timeout: 60_000 });
+  let before;
+  for (let i = 0; i < 40; i++) {
+    before = await saved();
+    if (before.scenarios.find((s) => s.kind === 'shock')?.calculation.inputs.monthlyEnergy === 600) break;
+    await page.waitForTimeout(250);
+  }
   const shock = before.scenarios.find((s) => s.kind === 'shock');
+  assert.equal(shock.calculation.inputs.monthlyEnergy, 600);
   await page.getByLabel('Minimum monthly sales (units)', { exact: true }).fill('500');
   await page.getByLabel('Maximum monthly sales (units)', { exact: true }).fill('1500');
   await page.getByRole('button', { name: 'Run analysis', exact: true }).click();
@@ -60,8 +80,11 @@ try {
   const report = (await reportResponse.json()).data;
   fs.writeFileSync(`${dir}/report-workbook.json`, JSON.stringify(report.workbook));
   assert.equal(report.workbook.sheetOrder[0], 'report');
-  assert.ok(report.workbook.resources.some((r) => r.name === 'SHEET_CHART_PLUGIN'));
-  pass('report API returns the selected saved revision, formulas and a real worksheet chart');
+  // Univer 1.4.0 prints worksheet charts as empty frames, so the printable report has none (Excel keeps it).
+  const chartData = report.workbook.resources?.find((r) => r.name === 'SHEET_CHART_PLUGIN')?.data;
+  assert.ok(!chartData || !JSON.parse(chartData).report?.length);
+  assert.match(JSON.stringify(report.workbook.sheets.report.cellData), /adds a line chart of these figures/);
+  pass('report API returns the selected saved revision and formulas; the printable report states the chart is in Excel');
 
   if (process.env.E2E_EXPORT_UNAVAILABLE === '1') {
     assert.equal(await page.getByRole('button', { name: 'Export analysis Excel', exact: true }).isDisabled(), true);
@@ -89,30 +112,36 @@ try {
   let timer;
   try { await Promise.race([printed, new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('No browser print request')), 30_000); })]); }
   finally { clearTimeout(timer); }
-  assert.match(printHtml, /<img|<canvas/);
-  fs.writeFileSync(`${dir}/print.html`, printHtml);
-  const pdfPage = await context.newPage();
-  await pdfPage.setContent(printHtml, { waitUntil: 'load' });
-  await pdfPage.waitForFunction(() => [...document.images].every((img) => img.complete));
-  await pdfPage.pdf({ path: `${dir}/analysis.pdf`, printBackground: true, preferCSSPageSize: true });
-  await pdfPage.close();
+  const pages = await preview.locator('.printing-canvas-container canvas').count();
+  assert.ok(pages >= 2, `expected report pages, got ${pages}`);
+  capturingPdf = true;
+  await preview.pdf({ path: `${dir}/analysis.pdf`, printBackground: true, preferCSSPageSize: true });
+  await finishPrint(preview);
+  await preview.waitForTimeout(500);
+  capturingPdf = false;
   assert.equal(fs.readFileSync(`${dir}/analysis.pdf`).subarray(0, 4).toString(), '%PDF');
-  assert.ok(fs.statSync(`${dir}/analysis.pdf`).size > 20_000, 'PDF must contain the rendered report, not empty canvas placeholders');
+  assert.ok(fs.statSync(`${dir}/analysis.pdf`).size > 20_000, 'PDF must contain the rendered report pages, not blank pages');
+  await preview.getByRole('button', { name: 'NEXT', exact: true }).waitFor({ state: 'hidden' });
   pass('Univer preview passes rendered report pages to native print / Save as PDF');
   assert.deepEqual(await saved(), before);
   pass('printing and exporting leave the baseline, inputs, assumptions and revision unchanged');
 
+  // Reopen after printing (the preview closed on afterprint), on a phone, then cancel.
   await preview.setViewportSize({ width: 390, height: 844 });
-  const cancel = preview.getByRole('button', { name: 'CANCEL', exact: true });
-  if (await cancel.isVisible()) await cancel.click();
   await preview.getByRole('button', { name: 'Print / PDF', exact: true }).click();
   const next = preview.getByRole('button', { name: 'NEXT', exact: true });
   await next.waitFor();
   const box = await next.boundingBox();
   assert.ok(box.x >= 0 && box.x + box.width <= 390);
-  await preview.screenshot({ path: `${dir}/mobile-print-preview.png`, fullPage: true });
+  await preview.screenshot({ path: `${dir}/mobile-print-preview.png` });
   await preview.getByRole('button', { name: 'CANCEL', exact: true }).click();
-  pass('report print controls remain usable on a phone');
+  await next.waitFor({ state: 'hidden' });
+  // Reopen once more after cancelling: nothing may be left covering the page.
+  await preview.getByRole('button', { name: 'Print / PDF', exact: true }).click();
+  await next.waitFor();
+  await preview.getByRole('button', { name: 'CANCEL', exact: true }).click();
+  assert.equal(await preview.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true);
+  pass('print reopens after printing and after cancelling, and fits a phone');
 
   const stranger = await browser.newContext();
   for (const suffix of ['report', 'export']) {

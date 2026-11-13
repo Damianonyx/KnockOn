@@ -17,6 +17,32 @@ const headingStyle = { bl: 1, bg: { rgb: '#FFF8EE' }, cl: { rgb: ink }, tb: 3, v
 const normalStyle: Record<string, unknown> = { fs: 11, tb: 3, vt: 2 };
 const numericStyle = { ...normalStyle, n: { pattern: '#,##0.00;[Red]-#,##0.00' } };
 
+const WRAP_CHARS = 110;
+const ROW_TEXT = 24;
+
+/**
+ * Split text into lines of at most `width` characters at spaces, so printed notes
+ * never break inside a word. A single word longer than a line (a pasted URL, say)
+ * is the only thing split mid-word.
+ */
+export function wrapWords(text: string, width: number): string[] {
+  const lines: string[] = [];
+  let current = '';
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    const chars = Array.from(word);
+    if (chars.length > width) {
+      if (current) { lines.push(current); current = ''; }
+      for (let i = 0; i < chars.length; i += width) lines.push(chars.slice(i, i + width).join(''));
+      current = lines.pop() ?? '';
+      continue;
+    }
+    const next = current ? `${current} ${word}` : word;
+    if (Array.from(next).length > width) { lines.push(current); current = word; } else current = next;
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
 /** A server-built report, never a client-supplied workbook. No stored project is changed. */
 export class AnalysisReportService {
   private readonly projects: ProjectService;
@@ -29,7 +55,13 @@ export class AnalysisReportService {
     if (latest.revision !== revision) throw revisionConflict(latest.revision);
   }
 
-  async report(projectId: string, request: AnalysisReportRequest): Promise<AnalysisReport> {
+  /**
+   * `chart: false` builds the printable report. Univer 1.4.0's print renders a
+   * worksheet chart as an empty frame (the preview draws it only after a re-render,
+   * the printed pages never), so the printed report leaves the chart out rather than
+   * print an empty box; the table holds the same figures. Excel keeps the chart.
+   */
+  async report(projectId: string, request: AnalysisReportRequest, { chart = true }: { chart?: boolean } = {}): Promise<AnalysisReport> {
     const parsed = analysisReportRequestSchema.safeParse(request);
     if (!parsed.success) throw new ApiError(400, 'BAD_REQUEST', 'Choose a valid scenario, saved revision and whole-number sales range.');
     const project = await this.projects.getProject(projectId);
@@ -56,18 +88,19 @@ export class AnalysisReportService {
     const paragraph = (value: string) => {
       // Give long notes their own printable rows instead of clipping or silently truncating them.
       for (const line of value.split(/\r?\n/)) {
-        const chars = Array.from(line);
-        if (!chars.length) full('');
-        for (let i = 0; i < chars.length; i += 105) full(chars.slice(i, i + 105).join(''), normalStyle, 36);
+        const lines = wrapWords(line, WRAP_CHARS);
+        if (!lines.length) full('', normalStyle, ROW_TEXT);
+        for (const part of lines) full(part, normalStyle, ROW_TEXT);
       }
     };
-    const headers = (labels: string[]) => { labels.forEach((label, col) => text(row, col, label, headingStyle)); rows[row] = { h: 42 }; row++; };
-    const formula = (r: number, col: number, f: string, units = false) => put(r, col, { f, s: units ? { ...normalStyle, n: { pattern: '#,##0' } } : numericStyle });
+    const headers = (labels: string[]) => { labels.forEach((label, col) => text(row, col, label, headingStyle)); rows[row] = { h: 38 }; row++; };
+    const units = (n: number) => n.toLocaleString('en-GB');
+    const formula = (r: number, col: number, f: string, whole = false) => put(r, col, { f, s: whole ? { ...normalStyle, n: { pattern: '#,##0' } } : numericStyle });
 
     full('KnockOn — Break-even & sales sensitivity', titleStyle, 42);
     paragraph(`Project: ${project.name}`);
     paragraph(`Selected scenario: ${scenario.name}`);
-    full(`Saved revision ${project.revision} · Currency: ${project.currency} · Monthly sales range: ${request.minUnits}–${request.maxUnits} units`);
+    full(`Saved revision ${project.revision} · Currency: ${project.currency} · Monthly sales range: ${units(request.minUnits)}–${units(request.maxUnits)} units`, normalStyle, ROW_TEXT);
     paragraph('Hypothetical sales, not a demand forecast. Unit price, ingredient cost per unit and monthly overheads stay fixed within each scenario.');
     if (project.demo) paragraph('This project started with fictional demo figures for learning. Read the recorded assumptions before using these results.');
     row++;
@@ -79,7 +112,7 @@ export class AnalysisReportService {
       // Interpretation is also a formula, so it stays consistent if the downloaded workbook is edited.
       put(row, 2, { f: `=IF(${ref(index, 'B18')}>0,"Minimum to cover costs",IF(${ref(index, 'B13')}>0,"Costs cannot be covered",IF(${ref(index, 'B18')}=0,"Break-even at every volume","Only at zero sales")))` });
       formula(row, 3, `=${ref(index, 'B18')}`); formula(row, 4, `=${ref(index, 'B13')}`);
-      rows[row++] = { h: 60 };
+      rows[row++] = { h: 34 };
     });
     paragraph('Whole-unit thresholds are rounded up. A blank threshold means costs cannot be covered. The calculation rounds contribution to 9 decimal places and the quotient to 6 to limit floating-point noise.');
     row++;
@@ -91,21 +124,26 @@ export class AnalysisReportService {
       formula(row, 0, `=${ref(selectedIndex, `A${sourceRow}`)}`, true);
       for (const [col, source] of [[1, 'B'], [2, 'C'], [3, 'D']] as const) formula(row, col, `=${ref(selectedIndex, `${source}${sourceRow}`)}`);
       formula(row, 4, `=${ref(baselineIndex, `D${sourceRow}`)}`);
-      rows[row++] = { h: 27 };
+      rows[row++] = { h: 24 };
     }
     row++;
     const chartRow = row + 1;
-    // Reserve space for a real Univer worksheet chart, preserved in the Excel file.
-    for (let i = 0; i < 13; i++) rows[row++] = { h: 26 };
-    row++;
+    if (chart) {
+      // Reserve space for a real Univer worksheet chart, preserved in the Excel file.
+      for (let i = 0; i < 13; i++) rows[row++] = { h: 26 };
+      row++;
+    } else {
+      paragraph('The Excel download (Export analysis Excel) adds a line chart of these figures. The table above contains the same values.');
+      row++;
+    }
     full('Source inputs — saved estimates stay unchanged', headingStyle);
     headers(['Input', 'Selected scenario', 'Baseline', 'Period / unit', 'Source cell']);
     BAKERY_INPUTS.forEach((input) => {
       text(row, 0, input.label);
       formula(row, 1, `=${ref(selectedIndex, input.cell)}`, input.key === 'monthlyUnits');
       formula(row, 2, `=${ref(baselineIndex, input.cell)}`, input.key === 'monthlyUnits');
-      text(row, 3, input.key === 'monthlyUnits' ? 'Units / month' : input.key === 'unitPrice' || input.key === 'ingredientCostPerUnit' ? `${project.currency} / unit` : `${project.currency} / month`);
-      text(row, 4, input.cell); rows[row++] = { h: 35 };
+      text(row, 3, input.key === 'monthlyUnits' ? 'Units / month' : input.key === 'unitPrice' || input.key === 'ingredientCostPerUnit' ? `${project.currency} / unit` : `${project.currency} / month`, { ...normalStyle, ht: 2 });
+      text(row, 4, input.cell); rows[row++] = { h: 26 };
     });
     row++;
     full('Recorded assumptions', headingStyle);
@@ -141,7 +179,7 @@ export class AnalysisReportService {
     });
     workbook.sheetOrder = [REPORT_ID, ...analysis.scenarios.map((_, index) => `analysis_${index}`)];
     workbook.name = `${project.name} — analysis r${project.revision}`;
-    const calculated = await calculateTrustedWorkbook(workbook, async (api) => {
+    const calculated = await calculateTrustedWorkbook(workbook, !chart ? undefined : async (api) => {
       const sheet = api.getActiveWorkbook()!.getSheetBySheetId(REPORT_ID)!;
       const info = sheet.newChart(api.Enum.ChartTypeString.Line)
         .setSource({ range: `A${sourceHeader}:E${sourceHeader + count}`, orientation: api.Enum.ChartSourceOrientation.Columns, header: { band: { startOffset: 0, endOffset: 0 } } })
