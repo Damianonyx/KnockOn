@@ -72,6 +72,42 @@ try {
   await run();
   pass('invalid and changed ranges cannot display misleading old results');
 
+  // Unsaved edits are excluded; saving hides the old analysis; rerunning gives updated results.
+  await page.locator('#input-monthlyRent').fill('700');
+  await page.locator('#input-monthlyRent').press('Enter');
+  await page.getByText('Unsaved edits are excluded. Save to include them in the analysis.', { exact: true }).waitFor();
+  assert.match(await group.getByRole('button', { name: /Energy/ }).innerText(), /834 units/);
+  pass('unsaved edits are flagged and excluded: the saved threshold stays on screen');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.waitForSelector('.save-btn[data-state="saved"]');
+  await page.getByText('The saved project or sales range changed.', { exact: false }).waitFor();
+  assert.equal(await group.count(), 0);
+  assert.equal(await page.getByText('Unsaved edits are excluded.', { exact: false }).count(), 0);
+  analysis = await run();
+  // Rent 600 -> 700 on the energy scenario: overheads 2,600 / contribution 3 = 866.67 -> 867. The baseline is untouched.
+  assert.deepEqual(analysis.scenarios.map((s) => s.breakEvenUnits), [767, 867]);
+  assert.match(await group.getByRole('button', { name: /Energy/ }).innerText(), /867 units/);
+  assert.match(await page.locator('#analysis svg').textContent(), /Covers costs from 867 units/);
+  pass('saving an edited input hides the previous analysis and rerunning shows updated results');
+
+  // A long scenario name must not break the layout.
+  const before = await saved();
+  const longName = 'Supplier raises ingredient prices again after the spring wheat harvest fails badly';
+  const forked = await page.request.post(`${url}/scenarios`, { data: { expectedRevision: before.revision, sourceScenarioId: before.baselineScenarioId, kind: 'shock', name: longName.slice(0, 80) } });
+  assert.equal(forked.status(), 201, await forked.text());
+  await page.reload(); await ready();
+  await page.getByLabel('Minimum monthly sales (units)', { exact: true }).fill('0');
+  await page.getByLabel('Maximum monthly sales (units)', { exact: true }).fill('5');
+  analysis = await run();
+  assert.deepEqual(analysis.scenarios[0].points.map((p) => p.units), [0, 1, 2, 3, 4, 5]);
+  await group.getByRole('button', { name: /Supplier raises/ }).click();
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true);
+  await page.locator('#analysis').screenshot({ path: `${dir}/long-name.png` });
+  pass('a narrow range samples every whole unit, and an 80-character scenario name fits');
+  await page.getByLabel('Minimum monthly sales (units)', { exact: true }).fill('500');
+  await page.getByLabel('Maximum monthly sales (units)', { exact: true }).fill('1500');
+  await run();
+
   const project = await saved();
   const request = { expectedRevision: project.revision, minUnits: 500, maxUnits: 1500 };
   assert.equal((await page.request.post(`${url}/analysis`, { data: { ...request, expectedRevision: 1 } })).status(), 409);

@@ -75,7 +75,7 @@ The same guide, with the model's inputs and formulas, is built into the app at [
 
 Below **Compare**, enter **Minimum monthly sales (units)** and **Maximum monthly sales (units)**, then select **Run analysis**. The range must use whole units between 0 and 1,000,000,000, with maximum greater than minimum.
 
-- **Break-even:** each saved scenario shows the minimum whole units needed to cover the modelled costs. With a positive contribution per unit, Univer divides monthly overheads by the difference between unit price and ingredient cost, then rounds up. Zero and negative contribution have explicit states, including when no sales volume can cover costs.
+- **Break-even:** each saved scenario shows the minimum whole units needed to cover the modelled costs. With a positive contribution per unit, Univer divides monthly overheads by the difference between unit price and ingredient cost, then rounds up. Zero and negative contribution have explicit states, including when no sales volume can cover costs. When a threshold falls inside the chosen range, the chart marks it.
 - **Sales sensitivity:** select a scenario to see profit across up to eleven sampled sales volumes, with the baseline as a dashed comparison. A table provides exact units, revenue, total costs and profit. Select a point or profit value, or **Inspect break-even**, to see the formulas and inputs.
 
 These are hypothetical sales, not a demand forecast. Price, ingredient cost per unit and monthly overheads stay fixed within each scenario. The model does not infer changes in energy usage, production capacity or customer behaviour.
@@ -197,6 +197,7 @@ Without a database URL, data is stored in an embedded Postgres in `./data/pglite
 | The HTTP API against a running server | `npm run smoke:api` |
 | The whole interface in a real browser, including a phone layout | `npm run e2e` |
 | Licensed charts, print preview, Excel download and export access checks | `npm run e2e:pro` |
+| Break-even and sales sensitivity in a real browser, including stale results and a phone layout | `npm run e2e:analysis` |
 
 ## Limits
 

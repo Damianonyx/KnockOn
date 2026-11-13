@@ -173,6 +173,18 @@ The new browser test is `scripts/e2e-analysis.mjs`, exposed as `npm run e2e:anal
 
 Do not assume this local environment transfers to Claude. Check out the feature branch from GitHub and configure your own ignored local environment. Do not request or commit license files for this analysis: it needs no new credentials. Keep any existing credentials private.
 
+## Continuation review (Claude, 13 November 2026)
+
+Completed on this branch after the checkpoint:
+
+- Ran `npm run e2e:analysis` for the first time: all checks pass. Added checks for unsaved edits being excluded, save-then-rerun producing updated results (834 → 867 units after rent rises to £700), a narrow range sampling every whole unit, and an 80-character scenario name.
+- Fixed a precision bug found by probing the real engine: floating-point noise could add a unit at an exact threshold (15 / (4.35 − 4.05) gave 51, not 50). B18 is now `=ROUND(B3-B4,9)` and B19 `=IF(B18>0,ROUNDUP(ROUND(B13/B18,6),0),IF(B13=0,0,""))`. A new test covers five boundary cases and the largest range.
+- The chart now marks the selected scenario's threshold when it falls inside the range. The interface states that production capacity and volume-driven energy use are not modelled, and separates the zero- and negative-contribution messages.
+- Documented the endpoint in `docs/API_CONTRACT.md`.
+- Regression: `npm test`, `npm run typecheck`, `npm run build`, `npm run e2e` and `npm run smoke:api` pass. `npm run e2e:pro` was not run (it needs the Univer licence and export service).
+
+Still open: the owner's release review, merge and deployment check. Not merged, not live.
+
 ## Content after verification
 
 One standalone X Premium post should explain the business questions, show the baseline and energy-shock example, demonstrate a user-chosen sales range, and show one formula inspection. State that the range is hypothetical and the baseline stays unchanged. Tag @univerHQ for the calculation engine.

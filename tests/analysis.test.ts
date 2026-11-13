@@ -60,6 +60,28 @@ describe('Univer break-even and sensitivity', () => {
     assert.deepEqual(result.scenarios[0].points.map((p) => [p.units, p.profit]), [[1, -3], [2, 0]]);
   });
 
+  it('does not add a unit when floating-point noise sits on an exact whole-unit threshold', async () => {
+    const project = projectWith({
+      // 15 / (4.35 - 4.05) is exactly 50, but 4.35 - 4.05 = 0.2999999999999998 in binary floating point.
+      fifty: { unitPrice: 4.35, ingredientCostPerUnit: 4.05, monthlyRent: 15 },
+      // Overheads 0.1 + 0.2 = 0.30000000000000004 and contribution 0.3 - 0.2 = 0.09999999999999998: exactly 3.
+      three: { unitPrice: 0.3, ingredientCostPerUnit: 0.2, monthlyEnergy: 0.1, monthlyRent: 0.2 },
+      hundred: { unitPrice: 5.1, ingredientCostPerUnit: 2, monthlyRent: 310 },
+      // A one-penny contribution against very large overheads: exactly 100,000,000,000.
+      penny: { unitPrice: 2.01, ingredientCostPerUnit: 2, monthlyRent: 1_000_000_000 },
+      // Just over a whole unit must still round up: 100.5 / 1 needs 101.
+      over: { unitPrice: 2, ingredientCostPerUnit: 1, monthlyRent: 100.5 },
+    }, true);
+    const result = await calculateProjectAnalysis(project, { expectedRevision: 1, minUnits: 0, maxUnits: 1_000_000_000 });
+    assert.deepEqual(result.scenarios.map((s) => s.breakEvenUnits), [50, 3, 100, 100_000_000_000, 101]);
+    assert.deepEqual(result.scenarios.map((s) => s.contributionPerUnit), [0.3, 0.1, 3.1, 0.01, 1]);
+    // The largest accepted range still returns finite, whole-number samples including both endpoints.
+    const units = result.scenarios[0].points.map((p) => p.units);
+    assert.equal(units.length, 11);
+    assert.deepEqual([units[0], units.at(-1)], [0, 1_000_000_000]);
+    assert.ok(units.every(Number.isInteger));
+  });
+
   it('rejects invalid sales ranges', () => {
     for (const [minUnits, maxUnits] of [[-1, 10], [0.5, 10], [0, 10.5], [5, 5], [10, 5], [0, 1_000_000_001], [null, 10], [0, '']]) {
       assert.equal(analysisRequestSchema.safeParse({ expectedRevision: 1, minUnits, maxUnits }).success, false);

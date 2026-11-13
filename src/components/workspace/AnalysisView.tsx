@@ -18,10 +18,14 @@ function threshold(scenario: ScenarioAnalysis) {
 
 function thresholdNote(scenario: ScenarioAnalysis) {
   switch (scenario.breakEvenStatus) {
-    case 'unreachable': return 'Each sale contributes nothing or loses money before monthly overheads.';
+    case 'unreachable': return scenario.contributionPerUnit < 0
+      ? 'Each sale costs more in ingredients than it earns, so extra sales increase the loss.'
+      : 'Price equals ingredient cost, so no sales volume covers the monthly overheads.';
     case 'any-volume': return 'Price equals ingredient cost and monthly overheads are zero. Profit stays zero.';
     case 'zero-sales-only': return 'Monthly overheads are zero, but each sale loses money.';
-    default: return 'Minimum whole units to cover the modelled costs, rounded up. This is not a sales forecast.';
+    default: return scenario.breakEvenUnits === 0
+      ? 'Monthly overheads are zero, so zero sales covers costs and every sale adds profit.'
+      : 'Minimum whole units to cover costs, rounded up, so profit at this volume can be slightly above zero. Not a sales forecast.';
   }
 }
 
@@ -52,6 +56,9 @@ function SensitivityChart({ scenario, baseline, currency, onInspect }: {
   const x = (units: number) => left + (units - first) / (last - first) * (right - left);
   const y = (profit: number) => 24 + (max - profit) / span * 180;
   const path = (s: ScenarioAnalysis) => s.points.map((p, i) => `${i ? 'L' : 'M'}${x(p.units)},${y(p.profit)}`).join(' ');
+  // Position only: the threshold itself is Univer's B19 result.
+  const marker = scenario.breakEvenStatus === 'attainable' && scenario.breakEvenUnits !== null && scenario.breakEvenUnits >= first && scenario.breakEvenUnits <= last
+    ? scenario.breakEvenUnits : null;
   const tick = (n: number) => new Intl.NumberFormat('en-GB', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
   return (
     <div ref={host}>
@@ -63,6 +70,12 @@ function SensitivityChart({ scenario, baseline, currency, onInspect }: {
             <text x={left - 8} y={y(value)} dy="0.35em" textAnchor="end">{tick(value)}</text>
           </g>
         ))}
+        {marker !== null && (
+          <g>
+            <line x1={x(marker)} x2={x(marker)} y1={24} y2={204} stroke="var(--accent)" strokeWidth="1.5" strokeDasharray="2 4" />
+            <text x={x(marker)} y={16} textAnchor={x(marker) > (left + right) / 2 ? 'end' : 'start'} className={styles.marker}>Covers costs from {formatNumber(marker)} units</text>
+          </g>
+        )}
         {comparison && <path d={path(comparison)} fill="none" stroke="var(--text-3)" strokeWidth="2" strokeDasharray="6 4" />}
         <path d={path(scenario)} fill="none" stroke="var(--brand)" strokeWidth="3" />
         {scenario.points.map((point) => (
@@ -140,7 +153,7 @@ export function AnalysisView({ project, activeScenarioId, dirty }: { project: Pr
             <input id="analysis-max" type="text" inputMode="numeric" placeholder="e.g. 1,500" value={maxUnits} onChange={(e) => setMaxUnits(e.target.value)} required /></div>
           <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Calculating…' : 'Run analysis'}</button>
         </form>
-        <p className="small muted">Hypothetical sales, not a demand forecast. Price, ingredient cost per unit and monthly overheads stay fixed within each scenario. Your saved sales estimates and baseline stay unchanged.</p>
+        <p className="small muted">Hypothetical sales, not a demand forecast. Price, ingredient cost per unit and monthly overheads stay fixed within each scenario. Production capacity and energy use that changes with volume are not modelled. Your saved sales estimates and baseline stay unchanged.</p>
         {project.demo && <p className="small muted">This project started with fictional demo figures for learning.</p>}
         {dirty && <p className="small" role="status">Unsaved edits are excluded. Save to include them in the analysis.</p>}
         {problem && <p className="error-text" role="alert">{problem}</p>}
@@ -178,7 +191,7 @@ export function AnalysisView({ project, activeScenarioId, dirty }: { project: Pr
                 <p>Monthly overheads: <strong>{formatMoney(selected.fixedCosts, project.currency)}</strong><code>B13 {BREAK_EVEN_FORMULAS.B13}</code></p>
                 <p>Contribution per unit: <strong>{formatMoney(selected.contributionPerUnit, project.currency)}</strong><code>B18 {BREAK_EVEN_FORMULAS.B18}</code></p>
                 <p>Break-even: <strong>{threshold(selected)}</strong><code>B19 {BREAK_EVEN_FORMULAS.B19}</code></p>
-                <p className="small">With a positive contribution, divide monthly overheads by contribution per unit and round up to whole units. If overheads are zero, zero sales covers costs; a zero or negative contribution needs the special cases shown above.</p>
+                <p className="small">With a positive contribution, divide monthly overheads by contribution per unit and round up to whole units. If overheads are zero, zero sales covers costs; a zero or negative contribution needs the special cases shown above. The two ROUND steps stop tiny decimal rounding errors from adding a unit.</p>
                 {point && <div className="stack" style={{ gap: 8 }}>
                   <h3>{formatNumber(point.units)} hypothetical units per month</h3>
                   <p>Analysis input A{point.row}: {formatNumber(point.units)} units</p>

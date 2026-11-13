@@ -9,6 +9,7 @@
 .threshold > strong { font-size: 1.15rem; }
 .chart { width: 100%; display: block; overflow: visible; }
 .chart text { font-size: 12px; fill: var(--text-2); }
+.chart .marker { fill: var(--accent-ink); font-weight: 600; }
 .chart circle[role='button'] { cursor: pointer; }
 .chart circle[role='button']:focus-visible { stroke: var(--focus); stroke-width: 2px; outline: none; }
 .solidKey, .dashedKey { display: inline-block; width: 22px; border-top: 3px solid var(--brand); vertical-align: middle; margin-right: 8px; }

@@ -38,11 +38,19 @@ export interface ProjectAnalysis {
   scenarios: ScenarioAnalysis[];
 }
 
-/** These cells live in a separate analysis sheet; the saved model stays A1:B16. */
+/**
+ * These cells live in a separate analysis sheet; the saved model stays A1:B16.
+ *
+ * The two ROUND calls keep binary floating-point noise from adding a unit. Without
+ * them, 4.35 - 4.05 is 0.2999999999999998 in Univer (as in any spreadsheet), so
+ * 15 / 0.2999999999999998 = 50.00000000000003 would round up to 51 when exactly
+ * 50 units cover the costs. A quotient within a millionth of a whole unit is
+ * treated as that whole unit.
+ */
 export const BREAK_EVEN_FORMULAS = {
   B13: '=SUM(B5:B9)',
-  B18: '=B3-B4',
-  B19: '=IF(B18>0,ROUNDUP(B13/B18,0),IF(B13=0,0,""))',
+  B18: '=ROUND(B3-B4,9)',
+  B19: '=IF(B18>0,ROUNDUP(ROUND(B13/B18,6),0),IF(B13=0,0,""))',
 } as const;
 
 export const sensitivityFormulas = (row: number) => ({
