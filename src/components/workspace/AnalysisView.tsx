@@ -6,6 +6,7 @@ import type { Project } from '@/lib/contracts/project';
 import { BAKERY_INPUTS } from '@/lib/templates/bakery';
 import { formatMoney, formatNumber, parseNumberInput } from '@/lib/format';
 import styles from './AnalysisView.module.css';
+import { AnalysisExportTools } from './AnalysisExportTools';
 
 function threshold(scenario: ScenarioAnalysis) {
   switch (scenario.breakEvenStatus) {
@@ -99,7 +100,7 @@ function SensitivityChart({ scenario, baseline, currency, onInspect }: {
   );
 }
 
-export function AnalysisView({ project, activeScenarioId, dirty }: { project: Project; activeScenarioId: string; dirty: boolean }) {
+export function AnalysisView({ project, activeScenarioId, dirty, excelExportAvailable }: { project: Project; activeScenarioId: string; dirty: boolean; excelExportAvailable: boolean }) {
   const [minUnits, setMinUnits] = useState('');
   const [maxUnits, setMaxUnits] = useState('');
   const [data, setData] = useState<ProjectAnalysis | null>(null);
@@ -161,6 +162,9 @@ export function AnalysisView({ project, activeScenarioId, dirty }: { project: Pr
         {current && selected && (
           <>
             <p className="small muted">Saved revision {data.projectRevision} · {formatNumber(data.minUnits)}–{formatNumber(data.maxUnits)} units per month · calculated by Univer</p>
+            <AnalysisExportTools key={`${data.projectRevision}:${data.minUnits}:${data.maxUnits}:${selected.scenarioId}`}
+              projectId={project.id} excelExportAvailable={excelExportAvailable}
+              request={{ expectedRevision: data.projectRevision, minUnits: data.minUnits, maxUnits: data.maxUnits, scenarioId: selected.scenarioId }} />
             <div className={styles.thresholds} role="group" aria-label="Break-even by scenario">
               {data.scenarios.map((scenario) => (
                 <button key={scenario.scenarioId} type="button" className={styles.threshold} aria-pressed={selected.scenarioId === scenario.scenarioId}

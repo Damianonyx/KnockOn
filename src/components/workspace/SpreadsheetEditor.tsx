@@ -19,10 +19,12 @@ import { BrowserWorkbookAdapter } from '@/lib/univer/browser/adapter';
 
 export default function SpreadsheetEditor({
   license,
+  report = false,
   onReady,
   onError,
 }: {
   license: string;
+  report?: boolean;
   onReady: (adapter: BrowserWorkbookAdapter | null) => void;
   onError: (message: string) => void;
 }) {
@@ -40,7 +42,7 @@ export default function SpreadsheetEditor({
     host.appendChild(container);
     let adapter: BrowserWorkbookAdapter | null = null;
     try {
-      adapter = new BrowserWorkbookAdapter({ container, license });
+      adapter = new BrowserWorkbookAdapter({ container, license, report });
       onReadyRef.current(adapter);
     } catch (error) {
       onErrorRef.current(error instanceof Error ? error.message : 'The spreadsheet could not start.');
@@ -54,7 +56,7 @@ export default function SpreadsheetEditor({
         container.remove();
       }, 0);
     };
-  }, [license]);
+  }, [license, report]);
 
   return <div ref={hostRef} style={{ height: '100%' }} data-testid="univer-host" />;
 }

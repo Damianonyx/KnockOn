@@ -24,6 +24,7 @@ import SheetsChartEnUS from '@univerjs-pro/sheets-chart/locale/en-US';
 import EngineChartEnUS from '@univerjs-pro/engine-chart/locale/en-US';
 import { UniverLicensePlugin } from '@univerjs-pro/license';
 import '@univerjs/sheets/facade';
+import '@univerjs-pro/sheets-chart/facade';
 import { BAKERY_SHEET_ID } from '@/lib/templates/bakery';
 import { readBakeryProjection, type BakeryProjection } from '../calculate';
 import { validateBakerySnapshot, withoutCachedResults, type BakeryWorkbook, type SnapshotIssue } from '../snapshot';
@@ -74,7 +75,7 @@ export async function recalculateWorkbook(snapshot: unknown): Promise<Recalculat
 }
 
 /** Internal engine boundary. Callers must validate user snapshots or construct all cells themselves. */
-export async function calculateTrustedWorkbook(input: BakeryWorkbook): Promise<BakeryWorkbook> {
+export async function calculateTrustedWorkbook(input: BakeryWorkbook, afterCalculation?: (api: FUniver) => Promise<void>): Promise<BakeryWorkbook> {
   // A fresh instance per calculation keeps requests isolated (no shared unit
   // ids or state between users) and is fast enough for the bakery template.
   const univer = new Univer({ logLevel: LogLevel.SILENT, locale: LocaleType.EN_US, locales: { [LocaleType.EN_US]: mergeLocales(EngineChartEnUS, SheetsChartEnUS) } });
@@ -101,7 +102,9 @@ export async function calculateTrustedWorkbook(input: BakeryWorkbook): Promise<B
     }
 
     // Facade save includes plugin resources; Workbook.getSnapshot() alone loses chart models and anchors.
-    const workbook = FUniver.newAPI(univer).getWorkbook(unit.getUnitId())!.save() as unknown as BakeryWorkbook;
+    const api = FUniver.newAPI(univer);
+    if (afterCalculation) await afterCalculation(api);
+    const workbook = api.getWorkbook(unit.getUnitId())!.save() as unknown as BakeryWorkbook;
     return workbook;
   } finally {
     univer.dispose();

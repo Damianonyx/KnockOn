@@ -14,7 +14,7 @@ function calculationFailed(): never {
   throw new ApiError(422, 'CALCULATION_ERROR', 'This range could not be calculated. Check the saved inputs and try a smaller sales range.');
 }
 
-export async function calculateProjectAnalysis(project: Project, request: AnalysisRequest): Promise<ProjectAnalysis> {
+export async function calculateProjectAnalysisWorkbook(project: Project, request: AnalysisRequest): Promise<{ analysis: ProjectAnalysis; workbook: BakeryWorkbook }> {
   const scenarios = orderScenarios(project);
   const steps = Math.min(10, request.maxUnits - request.minUnits);
   const sheets: BakeryWorkbook['sheets'] = {};
@@ -70,7 +70,11 @@ export async function calculateProjectAnalysis(project: Project, request: Analys
       })),
     };
   });
-  return { projectId: project.id, projectRevision: project.revision, minUnits: request.minUnits, maxUnits: request.maxUnits, scenarios: results };
+  return { analysis: { projectId: project.id, projectRevision: project.revision, minUnits: request.minUnits, maxUnits: request.maxUnits, scenarios: results }, workbook: calculated };
+}
+
+export async function calculateProjectAnalysis(project: Project, request: AnalysisRequest): Promise<ProjectAnalysis> {
+  return (await calculateProjectAnalysisWorkbook(project, request)).analysis;
 }
 
 export class AnalysisService {

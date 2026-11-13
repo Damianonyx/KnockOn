@@ -16,7 +16,7 @@ import type {
   UpdateScenarioRequest,
 } from '@/lib/contracts/project';
 import type { TemplateDescriptor } from '@/lib/templates';
-import type { AnalysisRequest, ProjectAnalysis } from '@/lib/contracts/analysis';
+import type { AnalysisRequest, ProjectAnalysis, AnalysisReportRequest, AnalysisReport } from '@/lib/contracts/analysis';
 
 export class ApiClientError extends Error {
   constructor(
@@ -89,20 +89,13 @@ async function request<T>(method: string, path: string, body?: unknown, timeoutM
   return (json as { data: T }).data;
 }
 
-export const api = {
-  analyse: (projectId: string, body: AnalysisRequest) =>
-    request<ProjectAnalysis>('POST', `/api/projects/${encodeURIComponent(projectId)}/analysis`, body),
-  listTemplates: () => request<TemplateDescriptor[]>('GET', '/api/templates'),
-  listProjects: () => request<ProjectSummary[]>('GET', '/api/projects'),
-  createProject: (body: CreateProjectRequest) => request<Project>('POST', '/api/projects', body),
-  getProject: (projectId: string) => request<Project>('GET', `/api/projects/${encodeURIComponent(projectId)}`),
-  exportScenario: async (projectId: string, scenarioId: string, expectedRevision: number): Promise<{ blob: Blob; filename: string }> => {
+async function downloadWorkbook(path: string, body: unknown): Promise<{ blob: Blob; filename: string }> {
     let response: Response;
     try {
-      response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/scenarios/${encodeURIComponent(scenarioId)}/export`, {
+      response = await fetch(path, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ expectedRevision }),
+        body: JSON.stringify(body),
         cache: 'no-store',
         signal: AbortSignal.timeout(65_000),
       });
@@ -116,7 +109,21 @@ export const api = {
     if (!response.headers.get('content-type')?.includes('spreadsheetml.sheet')) throw new ApiClientError(response.status, 'BAD_RESPONSE', 'The server did not return an Excel file.');
     const filename = response.headers.get('content-disposition')?.match(/filename="([^"]+)"/)?.[1] ?? 'KnockOn-scenario.xlsx';
     return { blob: await response.blob(), filename };
-  },
+}
+
+export const api = {
+  analyse: (projectId: string, body: AnalysisRequest) =>
+    request<ProjectAnalysis>('POST', `/api/projects/${encodeURIComponent(projectId)}/analysis`, body),
+  listTemplates: () => request<TemplateDescriptor[]>('GET', '/api/templates'),
+  listProjects: () => request<ProjectSummary[]>('GET', '/api/projects'),
+  createProject: (body: CreateProjectRequest) => request<Project>('POST', '/api/projects', body),
+  getProject: (projectId: string) => request<Project>('GET', `/api/projects/${encodeURIComponent(projectId)}`),
+  exportScenario: (projectId: string, scenarioId: string, expectedRevision: number) =>
+    downloadWorkbook(`/api/projects/${encodeURIComponent(projectId)}/scenarios/${encodeURIComponent(scenarioId)}/export`, { expectedRevision }),
+  analysisReport: (projectId: string, body: AnalysisReportRequest) =>
+    request<AnalysisReport>('POST', `/api/projects/${encodeURIComponent(projectId)}/analysis/report`, body),
+  exportAnalysis: (projectId: string, body: AnalysisReportRequest) =>
+    downloadWorkbook(`/api/projects/${encodeURIComponent(projectId)}/analysis/export`, body),
   forkScenario: (projectId: string, body: ForkScenarioRequest) =>
     request<Project>('POST', `/api/projects/${encodeURIComponent(projectId)}/scenarios`, body),
   saveScenario: (projectId: string, scenarioId: string, body: UpdateScenarioRequest) =>

@@ -159,7 +159,24 @@ Each entry in `scenarios` (ordered as in the scenario list) has `scenarioId`, `n
 | `any-volume` | Contribution and overheads both zero | 0 |
 | `zero-sales-only` | Contribution negative, overheads zero | 0 |
 
-The client shows results only while the response's `projectRevision`, `minUnits` and `maxUnits` match the saved revision and the entered range. Unsaved edits are excluded. The sensitivity chart is drawn by the application from these Univer results; it is not a worksheet chart and is not part of printing or Excel export. Figures are IEEE double-precision numbers, so results above about 9,000,000,000,000,000 lose pence-level precision.
+The client shows results only while the response's `projectRevision`, `minUnits` and `maxUnits` match the saved revision and the entered range. Unsaved edits are excluded. The on-page sensitivity chart is drawn by the application from these Univer results. The report export below creates a separate Univer worksheet chart from the same source calculations. Figures are IEEE double-precision numbers, so results above about 9,000,000,000,000,000 lose pence-level precision.
+
+### Analysis reports: printing and Excel
+
+Both endpoints accept the strict JSON body `{ expectedRevision, scenarioId, minUnits, maxUnits }`, using the same range validation as analysis. They require the current visitor to own the project and the selected scenario to belong to it.
+
+- `POST /api/projects/:projectId/analysis/report` returns `{ projectId, projectName, scenarioName, projectRevision, minUnits, maxUnits, workbook }` in the normal `data` envelope. The workbook has a first sheet named `Analysis report` and one supporting calculation sheet per saved scenario.
+- `POST /api/projects/:projectId/analysis/export` sends that server-built workbook to the private Univer converter and returns XLSX bytes with a safe attachment filename, private/no-store caching, and `X-KnockOn-Revision`.
+
+The report recalculates validated saved inputs with Univer; it never accepts a workbook or calculated figures from the client. It includes all break-even thresholds, the selected scenario's sensitivity table, baseline profit, an embedded line chart (Excel export only; see below), selected/baseline inputs and assumptions, model limits, currency and saved revision. Formula cells refer to the supporting worksheets so the Excel file remains inspectable. The server checks revision again after report creation and after conversion. A concurrent save returns 409 instead of an apparently current download; a consumed conversion is never automatically retried.
+
+Invalid bodies return 400, another visitor or an unknown scenario returns 404, and outdated revisions return 409. Existing converter failures use `EXPORT_UNAVAILABLE` (503) or `EXPORT_FAILED` (502). No database writes occur.
+
+The report endpoint builds the printable version without the chart; the export endpoint builds the same report with it. Univer 1.4.0's print preview draws a worksheet chart only after re-rendering, and the pages it sends to the browser's print dialog contain only the chart's empty frame (this also affects the scenario worksheet print). Rather than print an empty box, the printable report says the chart is in the Excel download, and its table holds the same figures.
+
+`/projects/:projectId/analysis/print` is a private report viewer. Its query string carries the scenario ID, expected revision and range; it loads the workbook through the authenticated POST endpoint. It uses its own read-only Univer instance and opens the first sheet in Univer Pro print preview, initially landscape and fitted to width. NEXT hands the rendered pages to the browser's print/Save as PDF dialog. Server keys and conversion tokens never reach this viewer. The view does not need the Excel conversion service.
+
+Analysis export controls are shown only for current analysis results. Each request captures the selected scenario, revision and range. A changing selection or range unmounts the previous Excel request's controls and prevents an obsolete response from starting a download.
 
 ## Charts and Excel downloads
 
